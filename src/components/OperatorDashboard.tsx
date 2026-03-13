@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppState } from '@/lib/state-provider';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar,
@@ -41,9 +41,67 @@ export default function OperatorDashboard() {
     dashboardState,
     isLivePlaying,
     setIsLivePlaying,
+    setCrowdFrequencyBanner,
   } = useAppState();
 
   const [selectedAlert, setSelectedAlert] = useState<SystemEvent | null>(null);
+  const [crowdInsight, setCrowdInsight] = useState<{
+    severity: 'LOW' | 'MED' | 'HIGH' | 'CRIT';
+    station: string;
+    currentTapRate: number;
+    recommendation: string;
+    xaiReasoning: string;
+    frequencyUpdate?: {
+      line: 'Purple' | 'Green';
+      oldFrequencyMin: number;
+      newFrequencyMin: number;
+      affectedStations: string[];
+      effectiveFrom: string;
+      estimatedDuration: string;
+      message: string;
+      operatorNote: string;
+    };
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const poll = async () => {
+      try {
+        const response = await fetch('/api/crowd', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ windowMinutes: 5 }),
+        });
+        const json = await response.json();
+        const payload = json?.data;
+        if (!active || !payload) return;
+
+        setCrowdInsight({
+          severity: payload.severity ?? 'LOW',
+          station: payload.station ?? 'Majestic',
+          currentTapRate: payload.currentTapRate ?? 0,
+          recommendation: payload.recommendation ?? 'Continue monitoring',
+          xaiReasoning: payload.xaiReasoning ?? 'No reasoning returned',
+          frequencyUpdate: payload.frequencyUpdate,
+        });
+
+        if (payload.frequencyUpdate) {
+          setCrowdFrequencyBanner(payload.frequencyUpdate);
+        }
+      } catch {
+        if (!active) return;
+        setCrowdInsight(null);
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 20000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [setCrowdFrequencyBanner]);
 
   // Current event timestamp display
   const currentTimestamp = eventStream[replayIndex]
@@ -107,6 +165,50 @@ export default function OperatorDashboard() {
       </div>
 
       <div className="p-4 space-y-4">
+        {crowdInsight && (
+          <div
+            className={`rounded-2xl border p-4 ${
+              crowdInsight.severity === 'CRIT'
+                ? 'bg-red-50 border-red-300'
+                : crowdInsight.severity === 'HIGH'
+                ? 'bg-amber-50 border-amber-300'
+                : 'bg-blue-50 border-blue-200'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-black">Live Crowd Intelligence</p>
+              <span
+                className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                  crowdInsight.severity === 'CRIT'
+                    ? 'bg-red-200 text-red-800'
+                    : crowdInsight.severity === 'HIGH'
+                    ? 'bg-amber-200 text-amber-800'
+                    : 'bg-blue-200 text-blue-800'
+                }`}
+              >
+                {crowdInsight.severity}
+              </span>
+            </div>
+            <p className="text-xs text-black/70 mt-1">
+              Station: {crowdInsight.station} · Tap-ins: {crowdInsight.currentTapRate}
+            </p>
+            <p className="text-xs text-black/70 mt-1">{crowdInsight.recommendation}</p>
+            <p className="text-[11px] text-black/50 mt-2">{crowdInsight.xaiReasoning}</p>
+
+            {crowdInsight.frequencyUpdate && (
+              <div className="mt-3 rounded-lg bg-white border border-gray-200 p-3">
+                <p className="text-xs font-semibold text-black">
+                  Frequency Update: {crowdInsight.frequencyUpdate.line} Line {crowdInsight.frequencyUpdate.oldFrequencyMin}m → {crowdInsight.frequencyUpdate.newFrequencyMin}m
+                </p>
+                <p className="text-xs text-black/60 mt-1">{crowdInsight.frequencyUpdate.message}</p>
+                <p className="text-xs text-black/50 mt-1">
+                  Affected: {crowdInsight.frequencyUpdate.affectedStations.join(', ')}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ━━━━━ TIME-TRAVEL REPLAY CONTROL ━━━━━ */}
         <div className="bg-white border border-cyan-500/20 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">

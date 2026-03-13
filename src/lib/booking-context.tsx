@@ -28,6 +28,18 @@ export interface Ticket {
   duration: number;
 }
 
+export interface BookingHmacPayload {
+  id: string;
+  from: string;
+  to: string;
+  date: string;
+  time: string;
+  passengers: number;
+  fare: number;
+  expires: string;
+  refreshNonce?: string;
+}
+
 interface BookingContextType {
   tickets: Ticket[];
   createTicket: (params: CreateTicketParams) => Ticket;
@@ -61,7 +73,7 @@ interface ModifyTicketParams {
 // Storage Keys
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const TICKETS_KEY = 'bmrcl_tickets';
-const HMAC_SECRET = 'BMRCL_NAMMA_METRO_2026_SECRET_KEY';
+export const BOOKING_HMAC_SECRET = 'BMRCL_NAMMA_METRO_2026_SECRET_KEY';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Helpers
@@ -70,8 +82,31 @@ function generateTicketId(): string {
   return `TKT${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 }
 
+export function buildBookingHmacPayload(input: BookingHmacPayload): BookingHmacPayload {
+  const payload: BookingHmacPayload = {
+    id: input.id,
+    from: input.from,
+    to: input.to,
+    date: input.date,
+    time: input.time,
+    passengers: input.passengers,
+    fare: input.fare,
+    expires: input.expires,
+  };
+
+  if (input.refreshNonce) {
+    payload.refreshNonce = input.refreshNonce;
+  }
+
+  return payload;
+}
+
+export function signBookingPayload(payload: BookingHmacPayload): string {
+  return CryptoJS.HmacSHA256(JSON.stringify(payload), BOOKING_HMAC_SECRET).toString();
+}
+
 function generateHmacSignature(ticket: Omit<Ticket, 'hmacSignature'>): string {
-  const payload = JSON.stringify({
+  const payload = buildBookingHmacPayload({
     id: ticket.id,
     from: ticket.fromStation,
     to: ticket.toStation,
@@ -81,7 +116,7 @@ function generateHmacSignature(ticket: Omit<Ticket, 'hmacSignature'>): string {
     fare: ticket.totalFare,
     expires: ticket.expiresAt,
   });
-  return CryptoJS.HmacSHA256(payload, HMAC_SECRET).toString();
+  return signBookingPayload(payload);
 }
 
 function getRandomPlatform(): number {
@@ -93,7 +128,7 @@ function getRandomDoorSide(): DoorSide {
   return sides[Math.floor(Math.random() * sides.length)];
 }
 
-function getExpiryTime(dateStr: string, timeStr: string): string {
+export function computeBookingExpiryTime(dateStr: string, timeStr: string): string {
   // Ticket valid for 24 hours from travel date/time
   const travelDateTime = new Date(`${dateStr}T${timeStr}`);
   travelDateTime.setHours(travelDateTime.getHours() + 24);
@@ -152,7 +187,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       totalFare: params.totalFare,
       status: 'ACTIVE' as TicketStatus,
       createdAt: new Date().toISOString(),
-      expiresAt: getExpiryTime(params.date, params.time),
+      expiresAt: computeBookingExpiryTime(params.date, params.time),
       route: params.route,
       duration: params.duration,
     };
@@ -201,7 +236,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       time: updates.time ?? ticket.time,
       passengers: newPassengers,
       totalFare: newFare,
-      expiresAt: getExpiryTime(updates.date ?? ticket.date, updates.time ?? ticket.time),
+      expiresAt: computeBookingExpiryTime(updates.date ?? ticket.date, updates.time ?? ticket.time),
     };
 
     const updatedTicket: Ticket = {

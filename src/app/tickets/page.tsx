@@ -8,7 +8,13 @@ import AppShell from '@/components/AppShell';
 import { useTranslation } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import { useWallet } from '@/lib/wallet-context';
-import { useBooking, type Ticket, type TicketStatus } from '@/lib/booking-context';
+import {
+  useBooking,
+  type Ticket,
+  type TicketStatus,
+  buildBookingHmacPayload,
+  signBookingPayload,
+} from '@/lib/booking-context';
 import {
   Ticket as TicketIcon,
   Clock,
@@ -54,9 +60,10 @@ interface TicketCardProps {
   onCancel: (id: string) => void;
   onModify: (id: string) => void;
   onMarkScanned: (id: string) => void;
+  onDraftRefund: (ticket: Ticket) => void;
 }
 
-function TicketCard({ ticket, onCancel, onModify, onMarkScanned }: TicketCardProps) {
+function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }: TicketCardProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(ticket.status === 'ACTIVE');
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(ticket.expiresAt));
@@ -97,6 +104,20 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned }: TicketCardPro
   const isActive = ticket.status === 'ACTIVE' && !isExpired;
 
   // QR code data
+  const qrPayload = buildBookingHmacPayload({
+    id: ticket.id,
+    from: ticket.fromStation,
+    to: ticket.toStation,
+    date: ticket.date,
+    time: ticket.time,
+    passengers: ticket.passengers,
+    fare: ticket.totalFare,
+    expires: ticket.expiresAt,
+    refreshNonce: isActive ? String(qrRefreshNonce) : undefined,
+  });
+
+  const qrSignature = signBookingPayload(qrPayload);
+
   const qrData = JSON.stringify({
     id: ticket.id,
     from: ticket.fromStation,
@@ -106,8 +127,9 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned }: TicketCardPro
     time: ticket.time,
     passengers: ticket.passengers,
     fare: ticket.totalFare,
-    hmac: ticket.hmacSignature,
-    refreshNonce: qrRefreshNonce,
+    expires: ticket.expiresAt,
+    hmac: qrSignature,
+    refreshNonce: isActive ? String(qrRefreshNonce) : undefined,
   });
 
   return (
@@ -219,6 +241,13 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned }: TicketCardPro
               {isActive && (
                 <div className="flex flex-wrap gap-3">
                   <button
+                    onClick={() => onDraftRefund(ticket)}
+                    className="flex items-center gap-2 px-4 py-2 bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition text-sm font-medium"
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    Draft Refund Email
+                  </button>
+                  <button
                     onClick={() => onModify(ticket.id)}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
                   >
@@ -264,6 +293,14 @@ export default function TicketsPage() {
 
   const [showCancelModal, setShowCancelModal] = useState<string | null>(null);
   const [showModifyModal, setShowModifyModal] = useState<string | null>(null);
+  const [refundDraft, setRefundDraft] = useState<{
+    caseId: string;
+    subject: string;
+    body: string;
+    refundDays: number;
+  } | null>(null);
+  const [refundDraftFor, setRefundDraftFor] = useState<string>('');
+  const [refundLoading, setRefundLoading] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
 
   // Redirect if not logged in — use localStorage and replace to avoid back-loop
@@ -294,6 +331,51 @@ export default function TicketsPage() {
 
   const handleMarkScanned = (ticketId: string) => {
     markAsScanned(ticketId);
+  };
+
+  const handleDraftRefund = async (ticket: Ticket) => {
+    setRefundLoading(true);
+    setRefundDraftFor(ticket.id);
+    try {
+      const response = await fetch('/api/refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketId: ticket.id,
+          userEmail: user?.email ?? 'passenger@bmrcl.demo',
+          station: ticket.fromStation,
+          amount: ticket.totalFare,
+          reason: 'Ticket cancellation/refund requested from tickets page.',
+          incidentDate: ticket.date,
+        }),
+      });
+      const json = await response.json();
+      const result = json?.data?.result ?? json?.data;
+      if (result?.caseId && result?.subject && result?.body) {
+        setRefundDraft({
+          caseId: result.caseId,
+          subject: result.subject,
+          body: result.body,
+          refundDays: result.refundDays ?? 3,
+        });
+      } else {
+        setRefundDraft({
+          caseId: 'BMRCL-FALLBACK',
+          subject: 'Refund request drafted',
+          body: 'Unable to load AI draft details at the moment. Please retry.',
+          refundDays: 3,
+        });
+      }
+    } catch {
+      setRefundDraft({
+        caseId: 'BMRCL-FALLBACK',
+        subject: 'Refund request drafted',
+        body: 'Network issue while generating refund draft. Please retry.',
+        refundDays: 3,
+      });
+    } finally {
+      setRefundLoading(false);
+    }
   };
 
   const ticketToCancel = tickets.find(t => t.id === showCancelModal);
@@ -333,6 +415,31 @@ export default function TicketsPage() {
           <p className="text-gray-500 mt-2">View and manage your metro tickets</p>
         </div>
 
+        {(refundLoading || refundDraft) && (
+          <div className="mb-6 bg-violet-50 border border-violet-200 rounded-xl p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-violet-900">Refund Email Draft</h3>
+              {refundLoading && <span className="text-xs text-violet-700">Generating...</span>}
+            </div>
+            {refundDraft && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs text-violet-700">Ticket: {refundDraftFor}</p>
+                <p className="text-xs text-violet-700">Case ID: {refundDraft.caseId}</p>
+                <p className="text-sm font-medium text-violet-900">{refundDraft.subject}</p>
+                <pre className="whitespace-pre-wrap text-xs text-violet-900 bg-white border border-violet-100 rounded-lg p-3">
+                  {refundDraft.body}
+                </pre>
+                <button
+                  onClick={() => navigator.clipboard.writeText(refundDraft.body)}
+                  className="text-xs px-3 py-1.5 bg-violet-700 text-white rounded-md hover:bg-violet-800 transition"
+                >
+                  Copy Draft Body
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {tickets.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <TicketIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -361,6 +468,7 @@ export default function TicketsPage() {
                       onCancel={() => setShowCancelModal(ticket.id)}
                       onModify={() => setShowModifyModal(ticket.id)}
                       onMarkScanned={handleMarkScanned}
+                      onDraftRefund={handleDraftRefund}
                     />
                   ))}
                 </div>
@@ -381,6 +489,7 @@ export default function TicketsPage() {
                       onCancel={() => {}}
                       onModify={() => {}}
                       onMarkScanned={() => {}}
+                      onDraftRefund={() => {}}
                     />
                   ))}
                 </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import AppShell from '@/components/AppShell';
+import HomeAIChatbot from '@/components/HomeAIChatbot';
 import { useTranslation } from '@/lib/i18n-context';
 import {
   ArrowRight,
@@ -258,6 +259,7 @@ export default function HomePage() {
           </section>
         </div>
       </div>
+      <HomeAIChatbot />
     </AppShell>
   );
 }

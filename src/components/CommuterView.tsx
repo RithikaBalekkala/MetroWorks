@@ -34,13 +34,30 @@ import {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export default function CommuterView() {
-  const { currentTicket, currentRoute, setCurrentRoute, generateTicket, refreshCurrentTicket } = useAppState();
+  const {
+    currentTicket,
+    currentRoute,
+    setCurrentRoute,
+    generateTicket,
+    refreshCurrentTicket,
+    crowdFrequencyBanner,
+  } = useAppState();
   const router = useRouter();
   const [inlineMessage, setInlineMessage] = useState('');
   const [fromStation, setFromStation] = useState('');
   const [toStation, setToStation] = useState('');
   const [tab, setTab] = useState<'planner' | 'ticket' | 'live'>('planner');
   const [ticketRefreshCount, setTicketRefreshCount] = useState(0);
+  const [chatSummary, setChatSummary] = useState('');
+  const [placesResult, setPlacesResult] = useState<{
+    station: string;
+    timeOfDay: 'morning' | 'afternoon' | 'evening';
+    foodAndCafes: Array<{ name: string; walkingMinutes: number; vibeTag: string }>;
+    historicalAndCultural: Array<{ name: string; walkingMinutes: number; vibeTag: string }>;
+    shopping: Array<{ name: string; walkingMinutes: number; vibeTag: string }>;
+    parks: Array<{ name: string; walkingMinutes: number; vibeTag: string }>;
+  } | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   // ── Auto-refresh QR every 30 seconds ──
   useEffect(() => {
@@ -80,6 +97,55 @@ export default function CommuterView() {
       const fromName = ALL_STATIONS.find(s => s.id === fromStation)?.name || '';
       const toName = ALL_STATIONS.find(s => s.id === toStation)?.name || '';
       generateTicket(fromName, toName, route.fare);
+
+      setAiLoading(true);
+      Promise.all([
+        fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `Plan route from ${fromName} to ${toName}`,
+            from: fromName,
+            to: toName,
+          }),
+        }),
+        fetch('/api/places', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            station: toName,
+            timeOfDay: 'afternoon',
+          }),
+        }),
+      ])
+        .then(async ([chatRes, placesRes]) => {
+          const chatJson = await chatRes.json();
+          const placesJson = await placesRes.json();
+
+          setChatSummary(
+            chatJson?.data?.result?.commuter_message ||
+              `Board at ${fromName} and continue toward ${toName}.`
+          );
+
+          const placesData = placesJson?.data?.result;
+          if (placesData?.station) {
+            setPlacesResult({
+              station: placesData.station,
+              timeOfDay: placesData.timeOfDay ?? 'afternoon',
+              foodAndCafes: placesData.foodAndCafes ?? [],
+              historicalAndCultural: placesData.historicalAndCultural ?? [],
+              shopping: placesData.shopping ?? [],
+              parks: placesData.parks ?? [],
+            });
+          } else {
+            setPlacesResult(null);
+          }
+        })
+        .catch(() => {
+          setChatSummary('AI assistant is temporarily unavailable. Route card remains accurate.');
+          setPlacesResult(null);
+        })
+        .finally(() => setAiLoading(false));
     }
   }, [fromStation, toStation, setCurrentRoute, generateTicket, router]);
 
@@ -128,6 +194,12 @@ export default function CommuterView() {
 
       {/* Content */}
       <div className="relative z-10 p-4">
+        {crowdFrequencyBanner && (
+          <div className="mb-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">
+            <p className="font-semibold">Service Advisory: {crowdFrequencyBanner.line} Line</p>
+            <p>{crowdFrequencyBanner.message}</p>
+          </div>
+        )}
         {inlineMessage && (
           <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">
             {inlineMessage}
@@ -141,6 +213,9 @@ export default function CommuterView() {
             setToStation={setToStation}
             onPlan={handlePlanRoute}
             route={currentRoute}
+            aiLoading={aiLoading}
+            chatSummary={chatSummary}
+            placesResult={placesResult}
           />
         )}
         {tab === 'ticket' && (
@@ -237,6 +312,9 @@ function RoutePlannerTab({
   setToStation,
   onPlan,
   route,
+  aiLoading,
+  chatSummary,
+  placesResult,
 }: {
   fromStation: string;
   toStation: string;
@@ -244,6 +322,16 @@ function RoutePlannerTab({
   setToStation: (v: string) => void;
   onPlan: () => void;
   route: import('@/lib/metro-network').RouteResult | null;
+  aiLoading: boolean;
+  chatSummary: string;
+  placesResult: {
+    station: string;
+    timeOfDay: 'morning' | 'afternoon' | 'evening';
+    foodAndCafes: Array<{ name: string; walkingMinutes: number; vibeTag: string }>;
+    historicalAndCultural: Array<{ name: string; walkingMinutes: number; vibeTag: string }>;
+    shopping: Array<{ name: string; walkingMinutes: number; vibeTag: string }>;
+    parks: Array<{ name: string; walkingMinutes: number; vibeTag: string }>;
+  } | null;
 }) {
   return (
     <div className="space-y-4">
@@ -340,6 +428,40 @@ function RoutePlannerTab({
           {route.interchanges.length > 0 && (
             <div className="text-[10px] text-center text-black/40 font-mono">
               INTERCHANGE: {route.interchanges.join(', ')}
+            </div>
+          )}
+        </div>
+      )}
+
+      {(aiLoading || chatSummary || placesResult) && (
+        <div className="mt-4 bg-white border border-gray-200 rounded-2xl p-4 space-y-3">
+          <p className="text-xs font-semibold text-black/70">AI Trip Assistant</p>
+          {aiLoading && <p className="text-xs text-black/50">Loading route insights and nearby places...</p>}
+          {!aiLoading && chatSummary && (
+            <p className="text-xs text-black/70">{chatSummary}</p>
+          )}
+          {!aiLoading && placesResult && (
+            <div className="space-y-2">
+              <p className="text-[11px] text-black/50">
+                Around {placesResult.station} ({placesResult.timeOfDay})
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                {[
+                  { title: 'Food', list: placesResult.foodAndCafes },
+                  { title: 'Culture', list: placesResult.historicalAndCultural },
+                  { title: 'Shopping', list: placesResult.shopping },
+                  { title: 'Parks', list: placesResult.parks },
+                ].map(section => (
+                  <div key={section.title} className="rounded-lg bg-[#f6faf7] border border-gray-100 p-2">
+                    <p className="font-medium text-black/70 mb-1">{section.title}</p>
+                    {section.list.slice(0, 2).map(item => (
+                      <p key={item.name} className="text-black/50 truncate">
+                        {item.name} ({item.walkingMinutes}m)
+                      </p>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
