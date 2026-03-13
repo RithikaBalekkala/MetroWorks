@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAppState } from '@/lib/state-provider';
 import {
   ALL_STATIONS,
@@ -32,6 +34,8 @@ import {
 
 export default function CommuterView() {
   const { currentTicket, currentRoute, setCurrentRoute, generateTicket, refreshCurrentTicket } = useAppState();
+  const router = useRouter();
+  const [inlineMessage, setInlineMessage] = useState('');
   const [fromStation, setFromStation] = useState('');
   const [toStation, setToStation] = useState('');
   const [tab, setTab] = useState<'planner' | 'ticket' | 'live'>('planner');
@@ -58,6 +62,17 @@ export default function CommuterView() {
   // ── Route Planning ──
   const handlePlanRoute = useCallback(() => {
     if (!fromStation || !toStation) return;
+
+    const user = localStorage.getItem('bmrcl_user');
+    if (!user) {
+      // show inline message then redirect to auth with redirect param
+      setInlineMessage('Please log in to book tickets');
+      setTimeout(() => {
+        router.push('/auth?redirect=/booking&reason=login_required');
+      }, 900);
+      return;
+    }
+
     const route = calculateRoute(fromStation, toStation);
     if (route) {
       setCurrentRoute(route);
@@ -65,7 +80,7 @@ export default function CommuterView() {
       const toName = ALL_STATIONS.find(s => s.id === toStation)?.name || '';
       generateTicket(fromName, toName, route.fare);
     }
-  }, [fromStation, toStation, setCurrentRoute, generateTicket]);
+  }, [fromStation, toStation, setCurrentRoute, generateTicket, router]);
 
   const qrValue = currentTicket ? serialiseTicket(currentTicket) : '';
 
@@ -322,12 +337,18 @@ function TicketTab({
   route: import('@/lib/metro-network').RouteResult | null;
 }) {
   const [countdown, setCountdown] = useState(30);
+  const [userLoggedIn, setUserLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
     setCountdown(30);
     const timer = setInterval(() => setCountdown(c => (c > 0 ? c - 1 : 30)), 1000);
     return () => clearInterval(timer);
   }, [refreshCount]);
+
+  useEffect(() => {
+    // check session on mount
+    setUserLoggedIn(!!localStorage.getItem('bmrcl_user'));
+  }, []);
 
   if (!ticket) {
     return (
@@ -378,9 +399,18 @@ function TicketTab({
 
         {/* QR Code */}
         <div className="flex flex-col items-center py-5 px-4">
-          <div className="bg-white p-3 rounded-xl shadow-2xl shadow-purple-500/10">
-            <QRCode value={qrValue || 'EMPTY'} size={180} level="M" />
-          </div>
+            {userLoggedIn ? (
+              <div className="bg-white p-3 rounded-xl shadow-2xl shadow-purple-500/10">
+                <QRCode value={qrValue || 'EMPTY'} size={180} level="M" />
+              </div>
+            ) : (
+              <div className="bg-white p-3 rounded-xl shadow-2xl shadow-purple-500/10 filter blur-sm flex items-center justify-center w-[180px] h-[180px]">
+                <div className="text-center">
+                  <p className="text-sm text-gray-700">🔒 Login to view your QR ticket</p>
+                  <Link href="/auth" className="mt-2 inline-block px-3 py-1 bg-[#7B2D8B] text-white rounded-lg text-xs">Login Now</Link>
+                </div>
+              </div>
+            )}
           <div className="mt-3 flex items-center gap-2">
             <RefreshCw className={`w-3 h-3 text-purple-400 ${countdown <= 5 ? 'animate-spin' : ''}`} />
             <span className="text-[11px] text-white/50 font-mono">

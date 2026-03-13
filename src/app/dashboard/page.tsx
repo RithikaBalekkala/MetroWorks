@@ -34,10 +34,11 @@ export default function DashboardPage() {
 
   // Redirect to auth if not logged in
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/auth');
+    const u = localStorage.getItem('bmrcl_user');
+    if (!u) {
+      router.replace('/auth?redirect=/dashboard');
     }
-  }, [user, isLoading, router]);
+  }, [router]);
 
   if (isLoading || !user) {
     return (

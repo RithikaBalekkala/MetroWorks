@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import AppShell from '@/components/AppShell';
 import { useTranslation } from '@/lib/i18n-context';
@@ -236,13 +237,17 @@ export default function TicketsPage() {
 
   const [showCancelModal, setShowCancelModal] = useState<string | null>(null);
   const [showModifyModal, setShowModifyModal] = useState<string | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
-  // Redirect if not logged in
+  // Redirect if not logged in — use localStorage and replace to avoid back-loop
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth');
+    const u = localStorage.getItem('bmrcl_user');
+    if (!u) {
+      router.replace('/auth?redirect=/tickets');
+      return;
     }
-  }, [user, authLoading, router]);
+    setSessionChecked(true);
+  }, [router]);
 
   const handleCancel = (ticketId: string) => {
     const refundAmount = cancelTicket(ticketId);
@@ -276,6 +281,16 @@ export default function TicketsPage() {
     );
   }
 
+  if (!sessionChecked) {
+    return (
+      <AppShell>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="animate-spin w-8 h-8 border-4 border-[#7B2D8B] border-t-transparent rounded-full" />
+        </div>
+      </AppShell>
+    );
+  }
+
   const activeTickets = tickets.filter(t => t.status === 'ACTIVE');
   const pastTickets = tickets.filter(t => t.status !== 'ACTIVE');
 
@@ -292,16 +307,16 @@ export default function TicketsPage() {
         </div>
 
         {tickets.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+            <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <TicketIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-700 mb-2">No tickets yet</h2>
             <p className="text-gray-500 mb-6">Book your first journey to see your tickets here</p>
-            <button
-              onClick={() => router.push('/booking')}
+            <Link
+              href="/booking"
               className="px-6 py-3 bg-[#7B2D8B] text-white font-semibold rounded-xl hover:bg-[#6a2679] transition"
             >
               Book a Trip
-            </button>
+            </Link>
           </div>
         ) : (
           <div className="space-y-8">

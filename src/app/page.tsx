@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { AppProvider } from '@/lib/state-provider';
 import CommuterView from '@/components/CommuterView';
 import EdgeGateView from '@/components/EdgeGateView';
@@ -143,6 +144,21 @@ function LandingSelector({ onSelect }: { onSelect: (v: ViewType) => void }) {
           tags={['Time-Travel', 'XAI Reasoning', 'Telemetry']}
           onClick={() => onSelect('dashboard')}
         />
+      </div>
+
+      <div className="relative z-10 mt-8 flex items-center justify-center gap-4">
+        <Link
+          href="/trains"
+          className="px-6 py-3 bg-[#7B2D8B] text-white font-semibold rounded-xl hover:bg-[#6a2679] transition"
+        >
+          Check Trains
+        </Link>
+        <Link
+          href="/auth"
+          className="px-6 py-3 bg-[#00A550] text-white font-semibold rounded-xl hover:bg-[#008c44] transition"
+        >
+          Book Tickets
+        </Link>
       </div>
 
       <p className="relative z-10 mt-12 text-[10px] font-mono text-white/20 text-center">

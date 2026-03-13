@@ -39,7 +39,9 @@ function AuthContent() {
   // Redirect if already logged in
   useEffect(() => {
     if (!isLoading && user) {
-      router.push('/dashboard');
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect') || '/dashboard';
+      router.push(redirect);
     }
   }, [user, isLoading, router]);
 
@@ -51,7 +53,9 @@ function AuthContent() {
     const success = await login(email, password);
     
     if (success) {
-      router.push('/dashboard');
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect') || '/dashboard';
+      router.push(redirect);
     } else {
       setError('Invalid email or password. Please sign up first.');
     }
@@ -83,7 +87,9 @@ function AuthContent() {
     const success = await signup(name, email, phone, password);
     
     if (success) {
-      router.push('/dashboard');
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect') || '/dashboard';
+      router.push(redirect);
     } else {
       setError('Failed to create account. Please try again.');
     }

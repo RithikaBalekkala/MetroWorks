@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import AppShell from '@/components/AppShell';
 import { useTranslation } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
@@ -55,17 +56,22 @@ export default function WalletPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { balance, transactions, addMoney } = useWallet();
 
+  const [sessionChecked, setSessionChecked] = useState(false);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [amount, setAmount] = useState('');
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Redirect if not logged in
+  // Redirect if not logged in — localStorage check + replace
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth');
+    const u = localStorage.getItem('bmrcl_user');
+    if (!u) {
+      router.replace('/auth?redirect=/wallet');
+      return;
     }
-  }, [user, authLoading, router]);
+    setSessionChecked(true);
+  }, [router]);
 
   const handleAddMoney = async () => {
     const numAmount = parseInt(amount);
@@ -87,6 +93,16 @@ export default function WalletPage() {
   };
 
   if (authLoading || !user) {
+    return (
+      <AppShell>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="animate-spin w-8 h-8 border-4 border-[#7B2D8B] border-t-transparent rounded-full" />
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (!sessionChecked) {
     return (
       <AppShell>
         <div className="min-h-[60vh] flex items-center justify-center">
@@ -121,13 +137,21 @@ export default function WalletPage() {
               </p>
             </div>
             
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-[#7B2D8B] font-semibold rounded-xl hover:bg-white/90 transition shadow-lg"
-            >
-              <Plus className="w-5 h-5" />
-              {t('wallet.addMoney')}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-[#7B2D8B] font-semibold rounded-xl hover:bg-white/90 transition shadow-lg"
+              >
+                <Plus className="w-5 h-5" />
+                {t('wallet.addMoney')}
+              </button>
+              <Link
+                href="/booking"
+                className="px-4 py-2 bg-[#7B2D8B] text-white font-semibold rounded-lg hover:bg-[#6a2679] transition"
+              >
+                Book a Trip
+              </Link>
+            </div>
           </div>
 
           {/* Card Design Element */}

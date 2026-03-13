@@ -28,6 +28,18 @@ export default function BookingPage() {
   const { balance, debit, canAfford } = useWallet();
   const { createTicket } = useBooking();
 
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  // LocalStorage session check to avoid flash — redirect guests to auth and resume after login
+  useEffect(() => {
+    const u = localStorage.getItem('bmrcl_user');
+    if (!u) {
+      router.replace('/auth?redirect=/booking');
+      return;
+    }
+    setSessionChecked(true);
+  }, [router]);
+
   // Form state
   const [fromStation, setFromStation] = useState('');
   const [toStation, setToStation] = useState('');
@@ -53,10 +65,10 @@ export default function BookingPage() {
     setTime(now.toTimeString().slice(0, 5));
   }, []);
 
-  // Redirect if not logged in
+  // Keep existing auth-context redirect as a fallback
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth');
+      router.replace('/auth?redirect=/booking');
     }
   }, [user, authLoading, router]);
 
@@ -140,6 +152,16 @@ export default function BookingPage() {
   };
 
   if (authLoading || !user) {
+    return (
+      <AppShell>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="animate-spin w-8 h-8 border-4 border-[#7B2D8B] border-t-transparent rounded-full" />
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (!sessionChecked) {
     return (
       <AppShell>
         <div className="min-h-[60vh] flex items-center justify-center">
