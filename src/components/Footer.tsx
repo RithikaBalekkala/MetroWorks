@@ -2,23 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslation } from '@/lib/i18n-context';
 import { Phone, Mail, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
-
-// BMRCL Logo SVG Component (same as Header)
-function BmrclLogo({ className = 'w-10 h-10' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" className={className} aria-label="BMRCL Logo">
-      <circle cx="50" cy="50" r="48" fill="#7B2D8B" />
-      <circle cx="50" cy="50" r="38" fill="#00A550" />
-      <circle cx="50" cy="50" r="28" fill="#FFFFFF" />
-      <path
-        d="M30 65 L30 40 L50 55 L70 40 L70 65 L62 65 L62 52 L50 62 L38 52 L38 65 Z"
-        fill="#7B2D8B"
-      />
-    </svg>
-  );
-}
 
 export default function Footer() {
   const { t } = useTranslation();
@@ -45,11 +31,15 @@ export default function Footer() {
           {/* Logo & Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <BmrclLogo className="w-12 h-12" />
+              <Image
+                src="/namma-metro-logo.png"
+                alt="Namma Metro logo"
+                width={48}
+                height={48}
+                className="w-12 h-12 object-contain"
+              />
               <div>
-                <span className="text-[#7B2D8B] font-bold text-sm">Bangalore Metro Rail</span>
-                <br />
-                <span className="text-[#00A550] font-bold text-sm">Corporation Limited</span>
+                <span className="text-[#7B2D8B] font-extrabold text-base">ನಮ್ಮ ಮೆಟ್ರೋ</span>
               </div>
             </div>
             <p className="text-[var(--text-muted)] text-sm leading-relaxed">

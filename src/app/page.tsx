@@ -152,7 +152,7 @@ export default function HomePage() {
                   Smart Metro Platform
                 </div>
                 <h1 className="text-3xl font-black tracking-tight text-black sm:text-4xl lg:text-5xl">
-                  Namma Metro Digital Experience
+                  ನಮ್ಮ ಮೆಟ್ರೋ
                 </h1>
                 <p className="mt-4 text-base leading-relaxed text-gray-700 sm:text-lg">
                   One platform for commuters and operators: live route planning, secure ticketing,

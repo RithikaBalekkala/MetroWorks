@@ -2,29 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslation, LANGUAGE_OPTIONS, type Language } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import { useNotifications } from '@/lib/notification-service';
 import { Bell, ChevronDown, Menu, X, User, LogOut } from 'lucide-react';
-
-// BMRCL Logo SVG Component
-function BmrclLogo({ className = 'w-10 h-10' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" className={className} aria-label="BMRCL Logo">
-      {/* Outer circle - Purple */}
-      <circle cx="50" cy="50" r="48" fill="#7B2D8B" />
-      {/* Inner circle - Green */}
-      <circle cx="50" cy="50" r="38" fill="#00A550" />
-      {/* White center */}
-      <circle cx="50" cy="50" r="28" fill="#FFFFFF" />
-      {/* M letter stylized */}
-      <path
-        d="M30 65 L30 40 L50 55 L70 40 L70 65 L62 65 L62 52 L50 62 L38 52 L38 65 Z"
-        fill="#7B2D8B"
-      />
-    </svg>
-  );
-}
 
 export default function Header() {
   const { t, language, setLanguage } = useTranslation();
@@ -60,17 +42,18 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo + Brand Name */}
           <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-            <BmrclLogo className="w-10 h-10 sm:w-12 sm:h-12" />
+            <Image
+              src="/namma-metro-logo.png"
+              alt="Namma Metro logo"
+              width={48}
+              height={48}
+              className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+              priority
+            />
             <div className="hidden sm:block">
-              <span className="text-[#7B2D8B] font-bold text-sm sm:text-base leading-tight">
-                Bangalore Metro Rail
-              </span>
-              <br />
-              <span className="text-[#00A550] font-bold text-sm sm:text-base leading-tight">
-                Corporation Limited
-              </span>
+              <span className="text-[#7B2D8B] font-extrabold text-sm sm:text-base leading-tight">ನಮ್ಮ ಮೆಟ್ರೋ</span>
             </div>
-            <span className="sm:hidden text-[#7B2D8B] font-bold text-lg">BMRCL</span>
+            <span className="sm:hidden text-[#7B2D8B] font-extrabold text-base">ನಮ್ಮ ಮೆಟ್ರೋ</span>
           </Link>
 
           {/* Desktop Navigation */}
