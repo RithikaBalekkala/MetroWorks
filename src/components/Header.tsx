@@ -34,7 +34,6 @@ export default function Header() {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
   
   const langRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
@@ -56,7 +55,7 @@ export default function Header() {
   const currentLang = LANGUAGE_OPTIONS.find(l => l.code === language);
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-md">
+    <header className="sticky top-0 z-50 border-b border-[#d7e4d8] bg-white/95 backdrop-blur-md shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo + Brand Name */}
@@ -75,19 +74,28 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-gray-700 hover:text-[#7B2D8B] font-medium transition">
+          <nav className="hidden md:flex items-center gap-5">
+            <Link href="/" className="text-black hover:text-[#7B2D8B] font-medium transition">
               {t('nav.home')}
             </Link>
-            <Link href="/trains" className="text-gray-700 hover:text-[#7B2D8B] font-medium transition">
+            <Link href="/trains" className="text-black hover:text-[#7B2D8B] font-medium transition">
               {t('nav.trains')}
+            </Link>
+            <Link href="/commuter" className="text-black hover:text-[#00A550] font-medium transition">
+              Live Map
+            </Link>
+            <Link href="/edge-gate" className="text-black hover:text-[#00A550] font-medium transition">
+              Edge Gate
+            </Link>
+            <Link href="/xai-dashboard" className="text-black hover:text-[#7B2D8B] font-medium transition">
+              XAI
             </Link>
             {user && (
               <>
-                <Link href="/dashboard" className="text-gray-700 hover:text-[#7B2D8B] font-medium transition">
+                <Link href="/dashboard" className="text-black hover:text-[#7B2D8B] font-medium transition">
                   {t('nav.dashboard')}
                 </Link>
-                <Link href="/booking" className="text-gray-700 hover:text-[#7B2D8B] font-medium transition">
+                <Link href="/booking" className="text-black hover:text-[#00A550] font-medium transition">
                   {t('nav.booking')}
                 </Link>
               </>
@@ -100,14 +108,14 @@ export default function Header() {
             <div ref={langRef} className="relative">
               <button
                 onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-                className="flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                className="flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-black hover:bg-[#eef5ef] rounded-lg transition"
               >
                 <span className="hidden sm:inline">{currentLang?.nativeLabel}</span>
                 <span className="sm:hidden">{language.toUpperCase()}</span>
                 <ChevronDown className="w-4 h-4" />
               </button>
               {langDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-xl border border-[#d7e4d8] py-1 z-50">
                   {LANGUAGE_OPTIONS.map(opt => (
                     <button
                       key={opt.code}
@@ -116,7 +124,7 @@ export default function Header() {
                         setLangDropdownOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition ${
-                        language === opt.code ? 'text-[#7B2D8B] font-semibold bg-purple-50' : 'text-gray-700'
+                        language === opt.code ? 'text-[#7B2D8B] font-semibold bg-[#f1e8f4]' : 'text-black'
                       }`}
                     >
                       {opt.nativeLabel}
@@ -130,11 +138,11 @@ export default function Header() {
             {user && (
               <Link
                 href="/dashboard"
-                className="relative p-2 text-gray-600 hover:text-[#7B2D8B] hover:bg-gray-100 rounded-full transition"
+                className="relative p-2 text-black hover:text-[#7B2D8B] hover:bg-[#eef5ef] rounded-full transition"
               >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-[#7B2D8B] text-white text-xs font-bold rounded-full flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -154,10 +162,10 @@ export default function Header() {
                   </span>
                 </button>
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-[#d7e4d8] py-1 z-50">
                     <Link
                       href="/dashboard"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-black hover:bg-[#eef5ef]"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <User className="w-4 h-4" />
@@ -165,14 +173,14 @@ export default function Header() {
                     </Link>
                     <Link
                       href="/wallet"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-black hover:bg-[#eef5ef]"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       {t('nav.wallet')}
                     </Link>
                     <Link
                       href="/tickets"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-black hover:bg-[#eef5ef]"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       {t('nav.tickets')}
@@ -203,7 +211,7 @@ export default function Header() {
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="md:hidden p-2 text-black hover:bg-[#eef5ef] rounded-lg"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -212,49 +220,70 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-gray-100">
+          <nav className="md:hidden py-4 border-t border-[#d7e4d8]">
             <div className="flex flex-col gap-2">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
               >
                 {t('nav.home')}
               </Link>
               <Link
                 href="/trains"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
               >
                 {t('nav.trains')}
+              </Link>
+              <Link
+                href="/commuter"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
+              >
+                Live Map
+              </Link>
+              <Link
+                href="/edge-gate"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
+              >
+                Edge Gate
+              </Link>
+              <Link
+                href="/xai-dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
+              >
+                XAI Dashboard
               </Link>
               {user && (
                 <>
                   <Link
                     href="/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                    className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
                   >
                     {t('nav.dashboard')}
                   </Link>
                   <Link
                     href="/booking"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                    className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
                   >
                     {t('nav.booking')}
                   </Link>
                   <Link
                     href="/tickets"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                    className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
                   >
                     {t('nav.tickets')}
                   </Link>
                   <Link
                     href="/wallet"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg"
+                    className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
                   >
                     {t('nav.wallet')}
                   </Link>

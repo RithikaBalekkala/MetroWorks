@@ -83,16 +83,16 @@ export default function OperatorDashboard() {
       : 'bg-green-500/10 border-green-500/30';
 
   return (
-    <div className="min-h-screen bg-[#0a0e1a] text-white">
+    <div className="min-h-screen bg-[#f7faf7] text-black">
       {/* Top Bar */}
-      <div className="bg-[#0d1220] border-b border-white/5 px-6 py-3 flex items-center justify-between">
+      <div className="bg-[#edf5ef] border-b border-gray-100 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
-            <Brain className="w-5 h-5 text-white" />
+            <Brain className="w-5 h-5 text-black" />
           </div>
           <div>
             <h1 className="text-sm font-bold tracking-tight">BMRCL Command Center</h1>
-            <p className="text-[10px] text-white/30 font-mono">XAI OPERATOR DASHBOARD · EVENT SOURCING REPLAY</p>
+            <p className="text-[10px] text-black/30 font-mono">XAI OPERATOR DASHBOARD · EVENT SOURCING REPLAY</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -100,7 +100,7 @@ export default function OperatorDashboard() {
             <MonitorDot className="w-3 h-3 text-cyan-400" />
             <span className="text-[10px] text-cyan-400 font-mono">CONTROL ROOM</span>
           </div>
-          <div className="text-xs font-mono text-white/40">
+          <div className="text-xs font-mono text-black/40">
             Events: {replayIndex + 1}/{eventStream.length}
           </div>
         </div>
@@ -108,13 +108,13 @@ export default function OperatorDashboard() {
 
       <div className="p-4 space-y-4">
         {/* ━━━━━ TIME-TRAVEL REPLAY CONTROL ━━━━━ */}
-        <div className="bg-[#111827] border border-cyan-500/20 rounded-2xl p-4">
+        <div className="bg-white border border-cyan-500/20 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xs font-mono text-cyan-400 uppercase tracking-wider flex items-center gap-2">
               <Clock className="w-3 h-3" />
               Event Sourcing Time-Travel Replay
             </h2>
-            <span className="text-lg font-mono text-white font-bold">{currentTimestamp}</span>
+            <span className="text-lg font-mono text-black font-bold">{currentTimestamp}</span>
           </div>
 
           {/* Slider */}
@@ -128,7 +128,7 @@ export default function OperatorDashboard() {
                 setIsLivePlaying(false);
                 setReplayIndex(parseInt(e.target.value));
               }}
-              className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-700
+              className="w-full h-2 rounded-full appearance-none cursor-pointer bg-[#dde9df]
                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
                 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-400
                 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-cyan-400/30
@@ -145,14 +145,14 @@ export default function OperatorDashboard() {
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => { setIsLivePlaying(false); setReplayIndex(0); }}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition text-white/60 hover:text-white"
+              className="p-2 rounded-lg bg-[#f2f7f3] hover:bg-[#dde9df] transition text-black/60 hover:text-black"
               title="Go to start"
             >
               <Rewind className="w-4 h-4" />
             </button>
             <button
               onClick={() => { setIsLivePlaying(false); setReplayIndex(Math.max(0, replayIndex - 10)); }}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition text-white/60 hover:text-white"
+              className="p-2 rounded-lg bg-[#f2f7f3] hover:bg-[#dde9df] transition text-black/60 hover:text-black"
               title="Back 10 events"
             >
               <Rewind className="w-3 h-3" />
@@ -170,14 +170,14 @@ export default function OperatorDashboard() {
             </button>
             <button
               onClick={() => { setIsLivePlaying(false); setReplayIndex(Math.min(eventStream.length - 1, replayIndex + 10)); }}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition text-white/60 hover:text-white"
+              className="p-2 rounded-lg bg-[#f2f7f3] hover:bg-[#dde9df] transition text-black/60 hover:text-black"
               title="Forward 10 events"
             >
               <FastForward className="w-3 h-3" />
             </button>
             <button
               onClick={() => { setIsLivePlaying(false); setReplayIndex(eventStream.length - 1); }}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition text-white/60 hover:text-white"
+              className="p-2 rounded-lg bg-[#f2f7f3] hover:bg-[#dde9df] transition text-black/60 hover:text-black"
               title="Go to end (live)"
             >
               <FastForward className="w-4 h-4" />
@@ -210,7 +210,7 @@ export default function OperatorDashboard() {
               );
             })}
           </div>
-          <div className="flex justify-between text-[9px] font-mono text-white/20 mt-1">
+          <div className="flex justify-between text-[9px] font-mono text-black/20 mt-1">
             <span>T-30 min</span>
             <span>T-20 min</span>
             <span>T-10 min</span>
@@ -250,8 +250,8 @@ export default function OperatorDashboard() {
         {/* ━━━━━ Charts Row ━━━━━ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Telemetry Line Chart */}
-          <div className="bg-[#111827] border border-white/5 rounded-2xl p-4">
-            <h3 className="text-xs font-mono text-white/40 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <div className="bg-white border border-gray-100 rounded-2xl p-4">
+            <h3 className="text-xs font-mono text-black/40 uppercase tracking-wider mb-3 flex items-center gap-2">
               <Activity className="w-3 h-3" />
               Real-Time Telemetry (Tap-In / Tap-Out)
             </h3>
@@ -283,8 +283,8 @@ export default function OperatorDashboard() {
           </div>
 
           {/* Crowd Level Bar Chart */}
-          <div className="bg-[#111827] border border-white/5 rounded-2xl p-4">
-            <h3 className="text-xs font-mono text-white/40 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <div className="bg-white border border-gray-100 rounded-2xl p-4">
+            <h3 className="text-xs font-mono text-black/40 uppercase tracking-wider mb-3 flex items-center gap-2">
               <Users className="w-3 h-3" />
               Crowd Density Index
             </h3>
@@ -307,14 +307,14 @@ export default function OperatorDashboard() {
         {/* ━━━━━ XAI Alert Feed + Detail Panel ━━━━━ */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Alert Feed */}
-          <div className="lg:col-span-2 bg-[#111827] border border-white/5 rounded-2xl p-4">
-            <h3 className="text-xs font-mono text-white/40 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-4">
+            <h3 className="text-xs font-mono text-black/40 uppercase tracking-wider mb-3 flex items-center gap-2">
               <Brain className="w-3 h-3" />
               Explainable AI (XAI) Alert Feed
             </h3>
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {xaiEvents.length === 0 ? (
-                <p className="text-xs text-white/20 text-center py-8">
+                <p className="text-xs text-black/20 text-center py-8">
                   Drag the timeline slider forward to see AI events appear…
                 </p>
               ) : (
@@ -322,10 +322,10 @@ export default function OperatorDashboard() {
                   <button
                     key={evt.id}
                     onClick={() => setSelectedAlert(evt)}
-                    className={`w-full text-left p-3 rounded-xl border transition-all hover:bg-slate-800/50 ${
+                    className={`w-full text-left p-3 rounded-xl border transition-all hover:bg-[#f2f7f3]/50 ${
                       selectedAlert?.id === evt.id
-                        ? 'bg-slate-800/60 border-cyan-500/40'
-                        : 'bg-slate-900/30 border-white/5'
+                        ? 'bg-[#f2f7f3]/60 border-cyan-500/40'
+                        : 'bg-[#edf5ef]/30 border-gray-100'
                     }`}
                   >
                     <div className="flex items-start gap-2">
@@ -335,14 +335,14 @@ export default function OperatorDashboard() {
                           <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${eventTypeBadgeColor(evt.type)}`}>
                             {evt.type}
                           </span>
-                          <span className="text-[10px] text-white/30 font-mono">
+                          <span className="text-[10px] text-black/30 font-mono">
                             {new Date(evt.timestamp).toLocaleTimeString()}
                           </span>
                         </div>
-                        <p className="text-xs text-white/60 mt-1 truncate">{evt.station} · {evt.line} line</p>
-                        <p className="text-[11px] text-white/40 mt-0.5 line-clamp-2">{evt.xaiReasoning}</p>
+                        <p className="text-xs text-black/60 mt-1 truncate">{evt.station} · {evt.line} line</p>
+                        <p className="text-[11px] text-black/40 mt-0.5 line-clamp-2">{evt.xaiReasoning}</p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-white/20 shrink-0 mt-1" />
+                      <ChevronRight className="w-4 h-4 text-black/20 shrink-0 mt-1" />
                     </div>
                   </button>
                 ))
@@ -351,8 +351,8 @@ export default function OperatorDashboard() {
           </div>
 
           {/* XAI Detail Panel */}
-          <div className="bg-[#111827] border border-white/5 rounded-2xl p-4">
-            <h3 className="text-xs font-mono text-white/40 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <div className="bg-white border border-gray-100 rounded-2xl p-4">
+            <h3 className="text-xs font-mono text-black/40 uppercase tracking-wider mb-3 flex items-center gap-2">
               <Terminal className="w-3 h-3" />
               AI Reasoning Detail
             </h3>
@@ -364,31 +364,31 @@ export default function OperatorDashboard() {
                 </div>
                 <div className="space-y-2">
                   <div>
-                    <p className="text-[10px] text-white/30">Station</p>
+                    <p className="text-[10px] text-black/30">Station</p>
                     <p className="text-sm font-medium">{selectedAlert.station}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-white/30">Line</p>
+                    <p className="text-[10px] text-black/30">Line</p>
                     <p className="text-sm font-medium capitalize">{selectedAlert.line}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-white/30">Timestamp</p>
+                    <p className="text-[10px] text-black/30">Timestamp</p>
                     <p className="text-sm font-mono">{new Date(selectedAlert.timestamp).toLocaleString()}</p>
                   </div>
                 </div>
-                <div className="bg-slate-900/60 rounded-xl p-3 border border-white/5">
+                <div className="bg-[#edf5ef]/60 rounded-xl p-3 border border-gray-100">
                   <p className="text-[10px] text-cyan-400 font-mono mb-1">XAI REASONING:</p>
-                  <p className="text-xs text-white/70 leading-relaxed">{selectedAlert.xaiReasoning}</p>
+                  <p className="text-xs text-black/70 leading-relaxed">{selectedAlert.xaiReasoning}</p>
                 </div>
-                <div className="bg-slate-900/60 rounded-xl p-3 border border-white/5">
+                <div className="bg-[#edf5ef]/60 rounded-xl p-3 border border-gray-100">
                   <p className="text-[10px] text-purple-400 font-mono mb-1">EVENT DATA (JSON):</p>
-                  <pre className="text-[10px] text-white/50 font-mono overflow-x-auto">
+                  <pre className="text-[10px] text-black/50 font-mono overflow-x-auto">
                     {JSON.stringify(selectedAlert.data, null, 2)}
                   </pre>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center min-h-[200px] text-white/20 space-y-2">
+              <div className="flex flex-col items-center justify-center min-h-[200px] text-black/20 space-y-2">
                 <Brain className="w-8 h-8" />
                 <p className="text-xs">Select an alert to view AI reasoning</p>
               </div>
@@ -422,7 +422,7 @@ function KPICard({
     <div className={`rounded-xl border p-3 ${bg}`}>
       <div className="flex items-center gap-2 mb-1">
         {icon}
-        <span className="text-[10px] text-white/40 font-mono uppercase">{label}</span>
+        <span className="text-[10px] text-black/40 font-mono uppercase">{label}</span>
       </div>
       <p className="text-xl font-bold">{value}</p>
     </div>
@@ -446,7 +446,7 @@ function EventIcon({ type }: { type: string }) {
     case 'BLOOM_FILTER_ALERT':
       return <Activity className="w-3.5 h-3.5 text-cyan-400 shrink-0" />;
     default:
-      return <Activity className="w-3.5 h-3.5 text-white/40 shrink-0" />;
+      return <Activity className="w-3.5 h-3.5 text-black/40 shrink-0" />;
   }
 }
 
@@ -467,6 +467,6 @@ function eventTypeBadgeColor(type: string): string {
     case 'BLOOM_FILTER_ALERT':
       return 'bg-cyan-500/10 text-cyan-400';
     default:
-      return 'bg-slate-500/10 text-white/40';
+      return 'bg-slate-500/10 text-black/40';
   }
 }

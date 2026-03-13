@@ -1,210 +1,233 @@
 'use client';
 
-import React, { useState } from 'react';
 import Link from 'next/link';
-import { AppProvider } from '@/lib/state-provider';
-import CommuterView from '@/components/CommuterView';
-import EdgeGateView from '@/components/EdgeGateView';
-import OperatorDashboard from '@/components/OperatorDashboard';
+import AppShell from '@/components/AppShell';
+import { useTranslation } from '@/lib/i18n-context';
 import {
-  Smartphone,
-  Cpu,
+  ArrowRight,
+  Train,
+  Ticket,
+  Wallet,
+  LayoutDashboard,
+  Map,
+  ShieldCheck,
   Brain,
-  ChevronRight,
-  Zap,
-  Shield,
-  Activity,
+  Bell,
+  Sparkles,
 } from 'lucide-react';
 
-type ViewType = 'commuter' | 'gate' | 'dashboard';
-
-export default function Home() {
-  const [activeView, setActiveView] = useState<ViewType | null>(null);
-
-  return (
-    <AppProvider>
-      {activeView === null ? (
-        <LandingSelector onSelect={setActiveView} />
-      ) : (
-        <div className="min-h-screen bg-[#0a0e1a]">
-          {/* Global Nav Bar */}
-          <nav className="sticky top-0 z-50 bg-[#0d1220]/90 backdrop-blur-xl border-b border-white/5">
-            <div className="max-w-7xl mx-auto px-4 flex items-center h-12">
-              <button
-                onClick={() => setActiveView(null)}
-                className="text-xs font-mono text-white/40 hover:text-white transition mr-4"
-              >
-                ← BMRCL Platform
-              </button>
-              <div className="flex gap-1">
-                {([
-                  { key: 'commuter' as ViewType, icon: Smartphone, label: 'Commuter', color: 'purple' },
-                  { key: 'gate' as ViewType, icon: Cpu, label: 'Edge Gate', color: 'cyan' },
-                  { key: 'dashboard' as ViewType, icon: Brain, label: 'XAI Dashboard', color: 'green' },
-                ]).map(v => (
-                  <button
-                    key={v.key}
-                    onClick={() => setActiveView(v.key)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      activeView === v.key
-                        ? 'bg-white/10 text-white border border-white/20'
-                        : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                    }`}
-                  >
-                    <v.icon className="w-3 h-3" />
-                    {v.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </nav>
-
-          {/* View Content */}
-          <main>
-            {activeView === 'commuter' && <CommuterView />}
-            {activeView === 'gate' && <EdgeGateView />}
-            {activeView === 'dashboard' && <OperatorDashboard />}
-          </main>
-        </div>
-      )}
-    </AppProvider>
-  );
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Landing View Selector — Entry point for judges
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-function LandingSelector({ onSelect }: { onSelect: (v: ViewType) => void }) {
-  return (
-    <div className="min-h-screen bg-[#0a0e1a] flex flex-col items-center justify-center p-8 relative overflow-hidden">
-      {/* Animated Background Grid */}
-      <div className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
-      {/* Gradient Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px]" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-green-600/10 rounded-full blur-[120px]" />
-      <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-cyan-600/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2" />
-
-      <div className="relative z-10 text-center mb-12">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 via-cyan-500 to-green-500 flex items-center justify-center shadow-2xl shadow-purple-500/20">
-            <Zap className="w-7 h-7 text-white" />
-          </div>
-        </div>
-        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-3">
-          BMRCL <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-green-400 bg-clip-text text-transparent">Autonomous</span> Platform
-        </h1>
-        <p className="text-lg text-white/40 max-w-xl mx-auto">
-          Edge-Validated Ticketing & Transit Orchestration System for Namma Metro
-        </p>
-        <div className="flex items-center justify-center gap-4 mt-4">
-          <span className="flex items-center gap-1.5 text-[10px] font-mono text-white/30">
-            <Shield className="w-3 h-3" /> HMAC-SHA256
-          </span>
-          <span className="flex items-center gap-1.5 text-[10px] font-mono text-white/30">
-            <Activity className="w-3 h-3" /> Bloom Filter
-          </span>
-          <span className="flex items-center gap-1.5 text-[10px] font-mono text-white/30">
-            <Brain className="w-3 h-3" /> Event Sourcing
-          </span>
-        </div>
-      </div>
-
-      {/* Three Cards */}
-      <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full">
-        <ViewCard
-          icon={<Smartphone className="w-8 h-8" />}
-          title="Commuter App"
-          description="Mobile-first journey planner with route calculator, GTFS live train tracking, and stateful QR ticket that refreshes every 30 seconds."
-          gradient="from-purple-600 to-purple-900"
-          borderColor="border-purple-500/20 hover:border-purple-500/50"
-          tags={['Route Planner', 'QR Ticket', 'GTFS Live']}
-          onClick={() => onSelect('commuter')}
-        />
-        <ViewCard
-          icon={<Cpu className="w-8 h-8" />}
-          title="Edge Gate Validator"
-          description="Offline turnstile simulator with client-side HMAC-SHA256 verification and in-memory Bloom Filter for instant double-tap replay attack detection."
-          gradient="from-cyan-600 to-blue-900"
-          borderColor="border-cyan-500/20 hover:border-cyan-500/50"
-          tags={['Bloom Filter', 'HMAC Verify', 'Offline Mode']}
-          onClick={() => onSelect('gate')}
-        />
-        <ViewCard
-          icon={<Brain className="w-8 h-8" />}
-          title="XAI Dashboard"
-          description="Command center with event sourcing time-travel replay. Drag the slider backward to rewind telemetry, AI alerts, and crowd state to any past moment."
-          gradient="from-green-600 to-emerald-900"
-          borderColor="border-green-500/20 hover:border-green-500/50"
-          tags={['Time-Travel', 'XAI Reasoning', 'Telemetry']}
-          onClick={() => onSelect('dashboard')}
-        />
-      </div>
-
-      <div className="relative z-10 mt-8 flex items-center justify-center gap-4">
-        <Link
-          href="/trains"
-          className="px-6 py-3 bg-[#7B2D8B] text-white font-semibold rounded-xl hover:bg-[#6a2679] transition"
-        >
-          Check Trains
-        </Link>
-        <Link
-          href="/auth"
-          className="px-6 py-3 bg-[#00A550] text-white font-semibold rounded-xl hover:bg-[#008c44] transition"
-        >
-          Book Tickets
-        </Link>
-      </div>
-
-      <p className="relative z-10 mt-12 text-[10px] font-mono text-white/20 text-center">
-        BMRCL HACKATHON 2026 · BANGALORE METRO RAIL CORPORATION LIMITED · PROTOTYPE DEMONSTRATION
-      </p>
-    </div>
-  );
-}
-
-function ViewCard({
-  icon,
-  title,
-  description,
-  gradient,
-  borderColor,
-  tags,
-  onClick,
-}: {
-  icon: React.ReactNode;
+interface HubCard {
   title: string;
   description: string;
-  gradient: string;
-  borderColor: string;
-  tags: string[];
-  onClick: () => void;
-}) {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: 'purple' | 'green';
+}
+
+const mainCards: HubCard[] = [
+  {
+    title: 'Check Trains',
+    description: 'View all metro lines, stations, timings, fare slabs, and route info.',
+    href: '/trains',
+    icon: Train,
+    tone: 'purple',
+  },
+  {
+    title: 'Book Tickets',
+    description: 'Start booking flow with smart route calculation and wallet payment.',
+    href: '/auth?redirect=/booking',
+    icon: Ticket,
+    tone: 'green',
+  },
+  {
+    title: 'Login / Sign Up',
+    description: 'Access account authentication to continue with protected commuter workflows.',
+    href: '/auth',
+    icon: LayoutDashboard,
+    tone: 'purple',
+  },
+  {
+    title: 'Commuter Live Map',
+    description: 'Use route planner, live train simulation, and dynamic QR ticket view.',
+    href: '/commuter',
+    icon: Map,
+    tone: 'purple',
+  },
+  {
+    title: 'My Dashboard',
+    description: 'Access profile, quick actions, tickets, notifications, and wallet.',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    tone: 'green',
+  },
+  {
+    title: 'E-Wallet',
+    description: 'Check balance, top up, and track full transaction history.',
+    href: '/wallet',
+    icon: Wallet,
+    tone: 'purple',
+  },
+  {
+    title: 'My Tickets',
+    description: 'View active tickets, QR validity countdown, modify or cancel tickets.',
+    href: '/tickets',
+    icon: Ticket,
+    tone: 'green',
+  },
+];
+
+const advancedCards: HubCard[] = [
+  {
+    title: 'Edge Gate Validator',
+    description: 'Simulate offline turnstile scanning with HMAC and Bloom Filter checks.',
+    href: '/edge-gate',
+    icon: ShieldCheck,
+    tone: 'green',
+  },
+  {
+    title: 'XAI Dashboard',
+    description: 'Explore event-sourcing replay, crowd intelligence, and AI reasoning.',
+    href: '/xai-dashboard',
+    icon: Brain,
+    tone: 'purple',
+  },
+  {
+    title: 'Notifications Center',
+    description: 'Review live transit alerts and platform updates via dashboard bell.',
+    href: '/dashboard',
+    icon: Bell,
+    tone: 'green',
+  },
+];
+
+function Card({ title, description, href, icon: Icon, tone }: HubCard) {
+  const accentClass =
+    tone === 'purple'
+      ? 'border-[#e6d6ec] hover:border-[#7B2D8B] hover:shadow-[#7B2D8B]/15'
+      : 'border-[#d6ebde] hover:border-[#00A550] hover:shadow-[#00A550]/15';
+  const badgeClass =
+    tone === 'purple'
+      ? 'bg-[#f1e8f4] text-[#7B2D8B]'
+      : 'bg-[#e8f8ef] text-[#008c44]';
+
   return (
-    <button
-      onClick={onClick}
-      className={`group text-left bg-[#111827]/80 backdrop-blur border rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${borderColor}`}
+    <Link
+      href={href}
+      className={`group block rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${accentClass}`}
     >
-      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-4 text-white shadow-lg group-hover:scale-110 transition-transform`}>
-        {icon}
+      <div className="flex items-start justify-between gap-3">
+        <span className={`inline-flex rounded-xl p-2.5 ${badgeClass}`}>
+          <Icon className="h-5 w-5" />
+        </span>
+        <span className="text-xs font-semibold text-gray-600">Open</span>
       </div>
-      <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-      <p className="text-sm text-white/40 mb-4 leading-relaxed">{description}</p>
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {tags.map(tag => (
-          <span key={tag} className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-white/30 border border-white/10">
-            {tag}
-          </span>
-        ))}
+      <h3 className="mt-4 text-lg font-bold text-black">{title}</h3>
+      <p className="mt-2 text-sm text-gray-700 leading-relaxed">{description}</p>
+      <div className="mt-4 flex items-center text-sm font-semibold text-black">
+        Go to module
+        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
       </div>
-      <div className="flex items-center gap-1 text-xs font-medium text-white/50 group-hover:text-white transition">
-        Launch View <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+    </Link>
+  );
+}
+
+export default function HomePage() {
+  const { t } = useTranslation();
+
+  return (
+    <AppShell>
+      <div className="relative overflow-hidden bg-[var(--background)]">
+        <div className="pointer-events-none absolute inset-0 opacity-80">
+          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#efe2f4] blur-3xl" />
+          <div className="absolute top-20 right-0 h-72 w-72 rounded-full bg-[#dcf7e8] blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-[#efe2f4] blur-3xl" />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <section className="rounded-3xl border border-[#d7e4d8] bg-white/95 p-7 shadow-lg sm:p-10">
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#d7e4d8] bg-[#f7fbf8] px-3 py-1.5 text-xs font-semibold text-black">
+                  <Sparkles className="h-3.5 w-3.5 text-[#7B2D8B]" />
+                  Smart Metro Platform
+                </div>
+                <h1 className="text-3xl font-black tracking-tight text-black sm:text-4xl lg:text-5xl">
+                  Namma Metro Digital Experience
+                </h1>
+                <p className="mt-4 text-base leading-relaxed text-gray-700 sm:text-lg">
+                  One platform for commuters and operators: live route planning, secure ticketing,
+                  wallet payments, edge validation, and explainable AI monitoring.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    href="/trains"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#7B2D8B] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#6a2679]"
+                  >
+                    {t('landing.checkTrains')}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/auth?redirect=/booking"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#00A550] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#008c44]"
+                  >
+                    {t('landing.bookTickets')}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center gap-2 rounded-xl border border-[#d7e4d8] bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#f3f8f4]"
+                  >
+                    Open Dashboard
+                  </Link>
+                </div>
+              </div>
+
+              <div className="grid w-full max-w-md grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-[#e6d6ec] bg-[#faf5fc] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Core</p>
+                  <p className="mt-2 text-lg font-bold text-black">Commuter + Wallet</p>
+                </div>
+                <div className="rounded-2xl border border-[#d6ebde] bg-[#f1fbf5] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Security</p>
+                  <p className="mt-2 text-lg font-bold text-black">HMAC + Bloom</p>
+                </div>
+                <div className="rounded-2xl border border-[#d6ebde] bg-[#f1fbf5] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Live</p>
+                  <p className="mt-2 text-lg font-bold text-black">Train Simulation</p>
+                </div>
+                <div className="rounded-2xl border border-[#e6d6ec] bg-[#faf5fc] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Intelligence</p>
+                  <p className="mt-2 text-lg font-bold text-black">XAI Ops</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-10">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-black">Primary Modules</h2>
+              <span className="text-sm text-gray-600">Commuter-first workflow</span>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {mainCards.map(card => (
+                <Card key={card.title} {...card} />
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-10 pb-2">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-black">Advanced Operations</h2>
+              <span className="text-sm text-gray-600">Preserved with direct access</span>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {advancedCards.map(card => (
+                <Card key={card.title} {...card} />
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
-    </button>
+    </AppShell>
   );
 }

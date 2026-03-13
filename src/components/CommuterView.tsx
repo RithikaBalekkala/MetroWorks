@@ -85,16 +85,16 @@ export default function CommuterView() {
   const qrValue = currentTicket ? serialiseTicket(currentTicket) : '';
 
   return (
-    <div className="mx-auto max-w-[420px] min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white relative overflow-hidden">
+    <div className="mx-auto max-w-[420px] min-h-screen bg-gradient-to-b from-[#f7faf7] via-[#edf5ef] to-[#e6f0e8] text-black relative overflow-hidden">
       {/* Header */}
-      <div className="relative z-10 bg-gradient-to-r from-purple-900/80 to-green-900/80 backdrop-blur-md border-b border-white/10 p-4">
+      <div className="relative z-10 bg-gradient-to-r from-[#f3e9f7] to-[#e9f7ef] backdrop-blur-md border-b border-gray-200 p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-green-500 flex items-center justify-center">
-            <Train className="w-5 h-5 text-white" />
+            <Train className="w-5 h-5 text-black" />
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight">Namma Metro</h1>
-            <p className="text-[10px] text-white/60 font-mono tracking-widest uppercase">Autonomous Ticketing v2.0</p>
+            <p className="text-[10px] text-black/60 font-mono tracking-widest uppercase">Autonomous Ticketing v2.0</p>
           </div>
           <div className="ml-auto flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/20 border border-green-500/40">
             <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -104,7 +104,7 @@ export default function CommuterView() {
       </div>
 
       {/* Tab Bar */}
-      <div className="relative z-10 flex bg-slate-900/80 backdrop-blur border-b border-white/5">
+      <div className="relative z-10 flex bg-[#edf5ef]/80 backdrop-blur border-b border-gray-100">
         {[
           { key: 'planner' as const, icon: Navigation, label: 'Route' },
           { key: 'ticket' as const, icon: Shield, label: 'Ticket' },
@@ -116,7 +116,7 @@ export default function CommuterView() {
             className={`flex-1 py-3 flex flex-col items-center gap-1 text-[11px] font-medium transition-all ${
               tab === t.key
                 ? 'text-purple-400 border-b-2 border-purple-400 bg-purple-500/5'
-                : 'text-white/40 hover:text-white/70'
+                : 'text-black/40 hover:text-black/70'
             }`}
           >
             <t.icon className="w-4 h-4" />
@@ -171,31 +171,31 @@ function StationSelector({
 }) {
   return (
     <div className="relative">
-      <label className="text-[10px] font-mono text-white/50 uppercase tracking-wider mb-1 block">{label}</label>
-      <div className={`relative flex items-center bg-slate-800/80 border rounded-xl px-3 py-2.5 ${color}`}>
-        <div className="mr-2 text-white/60">{icon}</div>
+      <label className="text-[10px] font-mono text-black/50 uppercase tracking-wider mb-1 block">{label}</label>
+      <div className={`relative flex items-center bg-[#f2f7f3]/80 border rounded-xl px-3 py-2.5 ${color}`}>
+        <div className="mr-2 text-black/60">{icon}</div>
         <select
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="bg-transparent text-white text-sm flex-1 outline-none appearance-none cursor-pointer"
+          className="bg-transparent text-black text-sm flex-1 outline-none appearance-none cursor-pointer"
         >
-          <option value="" className="bg-slate-800">Select Station</option>
-          <optgroup label="━━ Purple Line ━━" className="bg-slate-800">
+          <option value="" className="bg-[#f2f7f3]">Select Station</option>
+          <optgroup label="━━ Purple Line ━━" className="bg-[#f2f7f3]">
             {PURPLE_LINE.map(s => (
-              <option key={s.id} value={s.id} className="bg-slate-800 text-purple-300">
+              <option key={s.id} value={s.id} className="bg-[#f2f7f3] text-purple-300">
                 🟣 {s.name}
               </option>
             ))}
           </optgroup>
-          <optgroup label="━━ Green Line ━━" className="bg-slate-800">
+          <optgroup label="━━ Green Line ━━" className="bg-[#f2f7f3]">
             {GREEN_LINE.map(s => (
-              <option key={s.id} value={s.id} className="bg-slate-800 text-green-300">
+              <option key={s.id} value={s.id} className="bg-[#f2f7f3] text-green-300">
                 🟢 {s.name}
               </option>
             ))}
           </optgroup>
         </select>
-        <ChevronDown className="w-4 h-4 text-white/40" />
+        <ChevronDown className="w-4 h-4 text-black/40" />
       </div>
     </div>
   );
@@ -230,8 +230,8 @@ function RoutePlannerTab({
       />
 
       <div className="flex justify-center">
-        <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center">
-          <ArrowRight className="w-4 h-4 text-white/60 rotate-90" />
+        <div className="w-8 h-8 rounded-full bg-[#f2f7f3] border border-gray-200 flex items-center justify-center">
+          <ArrowRight className="w-4 h-4 text-black/60 rotate-90" />
         </div>
       </div>
 
@@ -246,7 +246,7 @@ function RoutePlannerTab({
       <button
         onClick={onPlan}
         disabled={!fromStation || !toStation}
-        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-green-600 text-white font-bold text-sm
+        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-green-600 text-black font-bold text-sm
           hover:from-purple-500 hover:to-green-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed
           shadow-lg shadow-purple-500/20 active:scale-[0.98]"
       >
@@ -255,19 +255,19 @@ function RoutePlannerTab({
 
       {/* Route Result Card */}
       {route && (
-        <div className="mt-4 bg-slate-800/60 backdrop-blur border border-white/10 rounded-2xl p-4 space-y-4 animate-in slide-in-from-bottom-4">
+        <div className="mt-4 bg-[#f2f7f3]/60 backdrop-blur border border-gray-200 rounded-2xl p-4 space-y-4 animate-in slide-in-from-bottom-4">
           {/* Summary */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-purple-400" />
               <span className="text-2xl font-bold">{route.totalDurationMins}</span>
-              <span className="text-xs text-white/50">min</span>
+              <span className="text-xs text-black/50">min</span>
             </div>
             <div className="flex items-center gap-2">
               <IndianRupee className="w-4 h-4 text-green-400" />
               <span className="text-2xl font-bold">{route.fare}</span>
             </div>
-            <div className="px-2 py-1 rounded-lg bg-slate-700 text-xs text-white/60">
+            <div className="px-2 py-1 rounded-lg bg-[#dde9df] text-xs text-black/60">
               {route.totalStations} stops
             </div>
           </div>
@@ -301,7 +301,7 @@ function RoutePlannerTab({
                 </div>
                 <div className="flex-1 space-y-1">
                   <p className="text-sm font-medium">{seg.from.name}</p>
-                  <p className="text-[11px] text-white/40">
+                  <p className="text-[11px] text-black/40">
                     {seg.stationCount} stops · ~{seg.durationMins} min · {seg.line === 'purple' ? 'Purple' : 'Green'} Line
                   </p>
                   <p className="text-sm font-medium">{seg.to.name}</p>
@@ -312,7 +312,7 @@ function RoutePlannerTab({
 
           {/* Interchange callout */}
           {route.interchanges.length > 0 && (
-            <div className="text-[10px] text-center text-white/40 font-mono">
+            <div className="text-[10px] text-center text-black/40 font-mono">
               INTERCHANGE: {route.interchanges.join(', ')}
             </div>
           )}
@@ -352,7 +352,7 @@ function TicketTab({
 
   if (!ticket) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-white/30 space-y-3">
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-black/30 space-y-3">
         <Shield className="w-12 h-12" />
         <p className="text-sm">Plan a route first to generate your ticket</p>
       </div>
@@ -362,12 +362,12 @@ function TicketTab({
   return (
     <div className="space-y-4">
       {/* Ticket Card */}
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 rounded-2xl overflow-hidden">
+      <div className="bg-gradient-to-br from-[#f8edf9] to-[#eaf6ee] border border-gray-200 rounded-2xl overflow-hidden">
         {/* Ticket Header */}
         <div className="bg-gradient-to-r from-purple-900/60 to-green-900/60 px-4 py-3 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-mono text-white/50 tracking-wider">NAMMA METRO e-TICKET</p>
-            <p className="text-xs font-mono text-white/70 mt-0.5">{ticket.payload.ticketId}</p>
+            <p className="text-[10px] font-mono text-black/50 tracking-wider">NAMMA METRO e-TICKET</p>
+            <p className="text-xs font-mono text-black/70 mt-0.5">{ticket.payload.ticketId}</p>
           </div>
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/20">
             <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -376,20 +376,20 @@ function TicketTab({
         </div>
 
         {/* Route Info */}
-        <div className="px-4 py-3 border-b border-white/5">
+        <div className="px-4 py-3 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-white/40">FROM</p>
+              <p className="text-[10px] text-black/40">FROM</p>
               <p className="text-sm font-medium">{ticket.payload.from}</p>
             </div>
-            <ArrowRight className="w-4 h-4 text-white/30" />
+            <ArrowRight className="w-4 h-4 text-black/30" />
             <div className="text-right">
-              <p className="text-[10px] text-white/40">TO</p>
+              <p className="text-[10px] text-black/40">TO</p>
               <p className="text-sm font-medium">{ticket.payload.to}</p>
             </div>
           </div>
           {route && (
-            <div className="flex items-center gap-4 mt-2 text-[10px] text-white/40">
+            <div className="flex items-center gap-4 mt-2 text-[10px] text-black/40">
               <span>{route.totalDurationMins} min</span>
               <span>{route.totalStations} stops</span>
               <span className="text-green-400 font-bold">₹{route.fare}</span>
@@ -407,23 +407,23 @@ function TicketTab({
               <div className="bg-white p-3 rounded-xl shadow-2xl shadow-purple-500/10 filter blur-sm flex items-center justify-center w-[180px] h-[180px]">
                 <div className="text-center">
                   <p className="text-sm text-gray-700">🔒 Login to view your QR ticket</p>
-                  <Link href="/auth" className="mt-2 inline-block px-3 py-1 bg-[#7B2D8B] text-white rounded-lg text-xs">Login Now</Link>
+                  <Link href="/auth" className="mt-2 inline-block px-3 py-1 bg-[#7B2D8B] text-black rounded-lg text-xs">Login Now</Link>
                 </div>
               </div>
             )}
           <div className="mt-3 flex items-center gap-2">
             <RefreshCw className={`w-3 h-3 text-purple-400 ${countdown <= 5 ? 'animate-spin' : ''}`} />
-            <span className="text-[11px] text-white/50 font-mono">
+            <span className="text-[11px] text-black/50 font-mono">
               Auto-refresh in <span className={`font-bold ${countdown <= 5 ? 'text-red-400' : 'text-purple-400'}`}>{countdown}s</span>
             </span>
           </div>
-          <p className="text-[9px] text-white/30 font-mono mt-1">
+          <p className="text-[9px] text-black/30 font-mono mt-1">
             HMAC-SHA256 · Nonce: {ticket.payload.nonce.slice(0, 8)}…
           </p>
         </div>
 
         {/* Security Footer */}
-        <div className="bg-slate-900/60 px-4 py-2 flex items-center justify-between text-[9px] text-white/30 font-mono">
+        <div className="bg-[#edf5ef]/60 px-4 py-2 flex items-center justify-between text-[9px] text-black/30 font-mono">
           <span>Device: {ticket.payload.deviceHash}</span>
           <span>Sig: {ticket.signature.slice(0, 12)}…</span>
         </div>
@@ -434,7 +434,7 @@ function TicketTab({
         <Shield className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
         <div>
           <p className="text-[11px] text-red-400 font-medium">Screenshot Protection Active</p>
-          <p className="text-[10px] text-white/40">
+          <p className="text-[10px] text-black/40">
             This QR regenerates every 30 seconds with a new nonce and HMAC signature.
             Screenshots will fail edge-gate validation.
           </p>
@@ -468,13 +468,13 @@ function LiveMapTab({ trains, fromStation }: { trains: TrainPosition[]; fromStat
           <Zap className="w-4 h-4 text-yellow-400" />
           GTFS Real-Time Tracking
         </h3>
-        <span className="text-[10px] font-mono text-white/40">
+        <span className="text-[10px] font-mono text-black/40">
           {trains.length} trains active
         </span>
       </div>
 
       {/* Map Container */}
-      <div className="relative bg-slate-800/60 border border-white/10 rounded-2xl overflow-hidden" style={{ height: 400 }}>
+      <div className="relative bg-[#f2f7f3]/60 border border-gray-200 rounded-2xl overflow-hidden" style={{ height: 400 }}>
         {/* Grid background */}
         <div className="absolute inset-0 opacity-10"
           style={{
@@ -561,13 +561,13 @@ function LiveMapTab({ trains, fromStation }: { trains: TrainPosition[]; fromStat
 
         {/* Legend */}
         <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur rounded-lg px-3 py-2 space-y-1">
-          <div className="flex items-center gap-2 text-[9px] text-white/60">
+          <div className="flex items-center gap-2 text-[9px] text-black/60">
             <div className="w-3 h-1.5 rounded-sm bg-purple-500" /> Purple Line
           </div>
-          <div className="flex items-center gap-2 text-[9px] text-white/60">
+          <div className="flex items-center gap-2 text-[9px] text-black/60">
             <div className="w-3 h-1.5 rounded-sm bg-green-500" /> Green Line
           </div>
-          <div className="flex items-center gap-2 text-[9px] text-white/60">
+          <div className="flex items-center gap-2 text-[9px] text-black/60">
             <div className="w-2 h-2 rounded-full bg-yellow-400" /> Selected
           </div>
         </div>
@@ -575,7 +575,7 @@ function LiveMapTab({ trains, fromStation }: { trains: TrainPosition[]; fromStat
         {/* Selected station tooltip */}
         {selectedStation && (
           <div className="absolute top-2 right-2 bg-black/70 backdrop-blur rounded-lg px-3 py-2">
-            <p className="text-[10px] text-white/50">Your Station</p>
+            <p className="text-[10px] text-black/50">Your Station</p>
             <p className="text-xs font-bold text-yellow-400">{selectedStation.name}</p>
           </div>
         )}
@@ -583,19 +583,19 @@ function LiveMapTab({ trains, fromStation }: { trains: TrainPosition[]; fromStat
 
       {/* Train List */}
       <div className="space-y-2">
-        <h4 className="text-xs font-mono text-white/40 uppercase tracking-wider">Nearby Trains</h4>
+        <h4 className="text-xs font-mono text-black/40 uppercase tracking-wider">Nearby Trains</h4>
         {trains.slice(0, 5).map(t => (
-          <div key={t.trainId} className="flex items-center gap-3 bg-slate-800/40 rounded-xl p-3 border border-white/5">
+          <div key={t.trainId} className="flex items-center gap-3 bg-[#f2f7f3]/40 rounded-xl p-3 border border-gray-100">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${t.line === 'purple' ? 'bg-purple-500/20' : 'bg-green-500/20'}`}>
               <Train className={`w-4 h-4 ${t.line === 'purple' ? 'text-purple-400' : 'text-green-400'}`} />
             </div>
             <div className="flex-1">
               <p className="text-xs font-medium">{t.trainId}</p>
-              <p className="text-[10px] text-white/40">{t.currentStation.name} → {t.nextStation?.name}</p>
+              <p className="text-[10px] text-black/40">{t.currentStation.name} → {t.nextStation?.name}</p>
             </div>
             <div className="text-right">
               <p className="text-xs font-bold text-green-400">{Math.round(t.speed)} km/h</p>
-              <p className="text-[10px] text-white/40">{t.occupancy}% full</p>
+              <p className="text-[10px] text-black/40">{t.occupancy}% full</p>
             </div>
           </div>
         ))}

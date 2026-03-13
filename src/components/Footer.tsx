@@ -24,11 +24,11 @@ export default function Footer() {
   const { t } = useTranslation();
 
   const quickLinks = [
-    { key: 'footer.about' as const, href: '#' },
-    { key: 'footer.contact' as const, href: '#' },
-    { key: 'footer.terms' as const, href: '#' },
-    { key: 'footer.accessibility' as const, href: '#' },
-    { key: 'footer.rti' as const, href: '#' },
+    { key: 'footer.about' as const, href: '/about' },
+    { key: 'footer.contact' as const, href: '/contact' },
+    { key: 'footer.terms' as const, href: '/terms' },
+    { key: 'footer.accessibility' as const, href: '/accessibility' },
+    { key: 'footer.rti' as const, href: '/rti' },
   ];
 
   const socialLinks = [
@@ -39,7 +39,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-gradient-to-b from-gray-900 to-gray-950 text-white">
+    <footer className="bg-gradient-to-b from-[#f6fbf7] to-[#edf5ef] text-black border-t border-[#d7e4d8]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Logo & Brand */}
@@ -47,25 +47,25 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <BmrclLogo className="w-12 h-12" />
               <div>
-                <span className="text-[#a855f7] font-bold text-sm">Bangalore Metro Rail</span>
+                <span className="text-[#7B2D8B] font-bold text-sm">Bangalore Metro Rail</span>
                 <br />
-                <span className="text-[#22c55e] font-bold text-sm">Corporation Limited</span>
+                <span className="text-[#00A550] font-bold text-sm">Corporation Limited</span>
               </div>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed">
+            <p className="text-[var(--text-muted)] text-sm leading-relaxed">
               {t('landing.subtitle')}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Quick Links</h3>
+            <h3 className="text-lg font-semibold mb-4 text-black">Quick Links</h3>
             <ul className="space-y-2">
               {quickLinks.map(link => (
                 <li key={link.key}>
                   <Link
                     href={link.href}
-                    className="text-gray-400 hover:text-white transition text-sm"
+                    className="text-[var(--text-muted)] hover:text-[#7B2D8B] transition text-sm"
                   >
                     {t(link.key)}
                   </Link>
@@ -76,30 +76,30 @@ export default function Footer() {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Contact Us</h3>
+            <h3 className="text-lg font-semibold mb-4 text-black">Contact Us</h3>
             <div className="space-y-3">
               <a
                 href="tel:1800-425-1663"
-                className="flex items-center gap-3 text-gray-400 hover:text-white transition"
+                className="flex items-center gap-3 text-[var(--text-muted)] hover:text-black transition"
               >
                 <div className="w-8 h-8 bg-[#7B2D8B] rounded-full flex items-center justify-center flex-shrink-0">
                   <Phone className="w-4 h-4 text-white" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">{t('footer.helpline')}</p>
-                  <p className="font-semibold text-white">1800-425-1663</p>
+                  <p className="font-semibold text-black">1800-425-1663</p>
                 </div>
               </a>
               <a
                 href="mailto:customercare@bmrc.co.in"
-                className="flex items-center gap-3 text-gray-400 hover:text-white transition"
+                className="flex items-center gap-3 text-[var(--text-muted)] hover:text-black transition"
               >
                 <div className="w-8 h-8 bg-[#00A550] rounded-full flex items-center justify-center flex-shrink-0">
                   <Mail className="w-4 h-4 text-white" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">{t('footer.email')}</p>
-                  <p className="font-semibold text-white text-sm">customercare@bmrc.co.in</p>
+                  <p className="font-semibold text-black text-sm">customercare@bmrc.co.in</p>
                 </div>
               </a>
             </div>
@@ -107,7 +107,7 @@ export default function Footer() {
 
           {/* Social Media */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Follow Us</h3>
+            <h3 className="text-lg font-semibold mb-4 text-black">Follow Us</h3>
             <div className="flex gap-3">
               {socialLinks.map(social => (
                 <a
@@ -115,7 +115,7 @@ export default function Footer() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 bg-gray-800 hover:bg-[#7B2D8B] rounded-full flex items-center justify-center transition"
+                  className="w-10 h-10 bg-white border border-[#d7e4d8] text-black hover:bg-[#7B2D8B] hover:text-white rounded-full flex items-center justify-center transition"
                   aria-label={social.label}
                 >
                   <social.icon className="w-5 h-5" />
@@ -124,10 +124,10 @@ export default function Footer() {
             </div>
             {/* App badges placeholder */}
             <div className="mt-6 flex gap-2">
-              <div className="h-10 w-32 bg-gray-800 rounded-lg flex items-center justify-center text-xs text-gray-500">
+              <div className="h-10 w-32 bg-white border border-[#d7e4d8] rounded-lg flex items-center justify-center text-xs text-gray-600">
                 App Store
               </div>
-              <div className="h-10 w-32 bg-gray-800 rounded-lg flex items-center justify-center text-xs text-gray-500">
+              <div className="h-10 w-32 bg-white border border-[#d7e4d8] rounded-lg flex items-center justify-center text-xs text-gray-600">
                 Play Store
               </div>
             </div>
@@ -135,8 +135,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 pt-8 border-t border-gray-800 text-center">
-          <p className="text-gray-500 text-sm">{t('footer.copyright')}</p>
+        <div className="mt-12 pt-8 border-t border-[#d7e4d8] text-center">
+          <p className="text-gray-600 text-sm">{t('footer.copyright')}</p>
         </div>
       </div>
     </footer>

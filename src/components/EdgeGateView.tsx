@@ -83,11 +83,11 @@ export default function EdgeGateView() {
       ? 'bg-red-500/20 border-red-500/70'
       : flashState === 'invalid'
       ? 'bg-orange-500/10 border-orange-500/50'
-      : 'bg-slate-900/50 border-white/10';
+      : 'bg-[#edf5ef]/50 border-gray-200';
 
   return (
     <div className={`min-h-screen transition-all duration-500 ${
-      flashState === 'replay' ? 'animate-pulse bg-red-950' : 'bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950'
+      flashState === 'replay' ? 'animate-pulse bg-red-950' : 'bg-gradient-to-b from-[#f7faf7] via-[#edf5ef] to-[#e6f0e8]'
     }`}>
       {/* FULL-SCREEN REPLAY ATTACK OVERLAY */}
       {flashState === 'replay' && (
@@ -113,11 +113,11 @@ export default function EdgeGateView() {
         {/* Header */}
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center shadow-xl shadow-cyan-500/20">
-            <Cpu className="w-7 h-7 text-white" />
+            <Cpu className="w-7 h-7 text-black" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Edge Gate Validator</h1>
-            <p className="text-xs text-white/40 font-mono">OFFLINE TURNSTILE SIMULATOR · BLOOM FILTER ACTIVE</p>
+            <h1 className="text-2xl font-black text-black tracking-tight">Edge Gate Validator</h1>
+            <p className="text-xs text-black/40 font-mono">OFFLINE TURNSTILE SIMULATOR · BLOOM FILTER ACTIVE</p>
           </div>
           <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30">
             <Radio className="w-3 h-3 text-amber-400" />
@@ -128,13 +128,13 @@ export default function EdgeGateView() {
         {/* Gate Status Panel */}
         <div className={`rounded-2xl border-2 p-6 transition-all duration-500 ${flashBg}`}>
           <div className="flex items-center justify-between mb-6">
-            <div className="text-sm font-mono text-white/50">GATE STATUS</div>
+            <div className="text-sm font-mono text-black/50">GATE STATUS</div>
             <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${
               flashState === 'valid'
                 ? 'bg-green-500/20 text-green-400'
                 : flashState === 'replay' || flashState === 'invalid'
                 ? 'bg-red-500/20 text-red-400'
-                : 'bg-slate-700 text-white/40'
+                : 'bg-[#dde9df] text-black/40'
             }`}>
               {flashState === 'valid' ? '● OPEN' : flashState === 'idle' ? '○ STANDBY' : '✕ LOCKED'}
             </div>
@@ -150,7 +150,7 @@ export default function EdgeGateView() {
                 ? 'border-green-400 bg-green-500/5'
                 : flashState === 'replay'
                 ? 'border-red-500 bg-red-500/10'
-                : 'border-white/20 bg-slate-800/50'
+                : 'border-gray-300 bg-[#f2f7f3]/50'
             }`}
           >
             {isScanning ? (
@@ -177,8 +177,8 @@ export default function EdgeGateView() {
               </div>
             ) : (
               <div className="text-center space-y-2">
-                <Fingerprint className="w-10 h-10 text-white/20 mx-auto" />
-                <p className="text-[10px] text-white/30 font-mono">TAP TICKET</p>
+                <Fingerprint className="w-10 h-10 text-black/20 mx-auto" />
+                <p className="text-[10px] text-black/30 font-mono">TAP TICKET</p>
               </div>
             )}
           </div>
@@ -187,7 +187,7 @@ export default function EdgeGateView() {
           <button
             onClick={handleScan}
             disabled={!currentTicket || isScanning}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-sm
+            className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-black font-bold text-sm
               hover:from-cyan-500 hover:to-blue-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed
               shadow-lg shadow-cyan-500/20 active:scale-[0.98] flex items-center justify-center gap-2"
           >
@@ -201,20 +201,20 @@ export default function EdgeGateView() {
 
           {/* Manual QR Input */}
           <div className="mt-4 space-y-2">
-            <p className="text-[10px] font-mono text-white/30 uppercase">Or paste QR data manually:</p>
+            <p className="text-[10px] font-mono text-black/30 uppercase">Or paste QR data manually:</p>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={manualQR}
                 onChange={e => setManualQR(e.target.value)}
                 placeholder="Paste raw QR JSON..."
-                className="flex-1 bg-slate-800/80 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 font-mono
-                  outline-none focus:border-cyan-500/50 placeholder:text-white/20"
+                className="flex-1 bg-[#f2f7f3]/80 border border-gray-200 rounded-lg px-3 py-2 text-xs text-black/70 font-mono
+                  outline-none focus:border-cyan-500/50 placeholder:text-black/20"
               />
               <button
                 onClick={handleManualScan}
                 disabled={!manualQR.trim() || isScanning}
-                className="px-4 py-2 rounded-lg bg-slate-700 text-xs text-white/60 hover:bg-slate-600 transition disabled:opacity-30"
+                className="px-4 py-2 rounded-lg bg-[#dde9df] text-xs text-black/60 hover:bg-[#cfe0d3] transition disabled:opacity-30"
               >
                 Scan
               </button>
@@ -240,8 +240,8 @@ export default function EdgeGateView() {
                 <AlertTriangle className="w-5 h-5 text-orange-400 mt-0.5 shrink-0" />
               )}
               <div>
-                <p className="text-sm font-medium text-white">{lastResult.message}</p>
-                <p className="text-[10px] text-white/30 font-mono mt-1">
+                <p className="text-sm font-medium text-black">{lastResult.message}</p>
+                <p className="text-[10px] text-black/30 font-mono mt-1">
                   Validated at {new Date(lastResult.timestamp).toLocaleTimeString()} | Bloom Fill: {(bloomFilter.fillRatio * 100).toFixed(1)}%
                 </p>
               </div>
@@ -250,49 +250,49 @@ export default function EdgeGateView() {
         )}
 
         {/* Bloom Filter Visualization */}
-        <div className="bg-slate-800/40 border border-white/10 rounded-2xl p-4">
-          <h3 className="text-xs font-mono text-white/40 uppercase tracking-wider mb-3 flex items-center gap-2">
+        <div className="bg-[#f2f7f3]/40 border border-gray-200 rounded-2xl p-4">
+          <h3 className="text-xs font-mono text-black/40 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Activity className="w-3 h-3" />
             Bloom Filter State
           </h3>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-900/50 rounded-xl p-3">
-              <p className="text-[10px] text-white/40">Fill Ratio</p>
+            <div className="bg-[#edf5ef]/50 rounded-xl p-3">
+              <p className="text-[10px] text-black/40">Fill Ratio</p>
               <p className="text-xl font-bold text-cyan-400">{(bloomFilter.fillRatio * 100).toFixed(1)}%</p>
-              <div className="mt-2 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div className="mt-2 h-1.5 bg-[#dde9df] rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-500"
                   style={{ width: `${bloomFilter.fillRatio * 100}%` }}
                 />
               </div>
             </div>
-            <div className="bg-slate-900/50 rounded-xl p-3">
-              <p className="text-[10px] text-white/40">Hash Functions (k)</p>
+            <div className="bg-[#edf5ef]/50 rounded-xl p-3">
+              <p className="text-[10px] text-black/40">Hash Functions (k)</p>
               <p className="text-xl font-bold text-purple-400">7</p>
-              <p className="text-[10px] text-white/30 mt-1">FNV-1a variant</p>
+              <p className="text-[10px] text-black/30 mt-1">FNV-1a variant</p>
             </div>
-            <div className="bg-slate-900/50 rounded-xl p-3">
-              <p className="text-[10px] text-white/40">Bit Array Size (m)</p>
+            <div className="bg-[#edf5ef]/50 rounded-xl p-3">
+              <p className="text-[10px] text-black/40">Bit Array Size (m)</p>
               <p className="text-xl font-bold text-green-400">2,048</p>
-              <p className="text-[10px] text-white/30 mt-1">256 bytes</p>
+              <p className="text-[10px] text-black/30 mt-1">256 bytes</p>
             </div>
-            <div className="bg-slate-900/50 rounded-xl p-3">
-              <p className="text-[10px] text-white/40">Scans Processed</p>
+            <div className="bg-[#edf5ef]/50 rounded-xl p-3">
+              <p className="text-[10px] text-black/40">Scans Processed</p>
               <p className="text-xl font-bold text-amber-400">{scanHistory.length}</p>
-              <p className="text-[10px] text-white/30 mt-1">This session</p>
+              <p className="text-[10px] text-black/30 mt-1">This session</p>
             </div>
           </div>
         </div>
 
         {/* Scan History Log */}
-        <div className="bg-slate-800/40 border border-white/10 rounded-2xl p-4">
-          <h3 className="text-xs font-mono text-white/40 uppercase tracking-wider mb-3 flex items-center gap-2">
+        <div className="bg-[#f2f7f3]/40 border border-gray-200 rounded-2xl p-4">
+          <h3 className="text-xs font-mono text-black/40 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Timer className="w-3 h-3" />
             Scan History Log
           </h3>
           <div className="space-y-2 max-h-[300px] overflow-y-auto">
             {scanHistory.length === 0 ? (
-              <p className="text-xs text-white/20 text-center py-4">No scans yet</p>
+              <p className="text-xs text-black/20 text-center py-4">No scans yet</p>
             ) : (
               scanHistory.map((scan, i) => (
                 <div key={i} className={`flex items-start gap-2 p-2 rounded-lg text-xs ${
@@ -310,8 +310,8 @@ export default function EdgeGateView() {
                     <XCircle className="w-3.5 h-3.5 text-orange-400 mt-0.5 shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-white/70 truncate">{scan.message}</p>
-                    <p className="text-[9px] text-white/30 font-mono">{new Date(scan.timestamp).toLocaleTimeString()}</p>
+                    <p className="text-black/70 truncate">{scan.message}</p>
+                    <p className="text-[9px] text-black/30 font-mono">{new Date(scan.timestamp).toLocaleTimeString()}</p>
                   </div>
                 </div>
               ))
