@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import AppShell from '@/components/AppShell';
 import { useTranslation } from '@/lib/i18n-context';
 import {
@@ -133,6 +135,20 @@ function Card({ title, description, href, icon: Icon, tone }: HubCard) {
 
 export default function HomePage() {
   const { t } = useTranslation();
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY || 0);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const heroRotateY = Math.max(-10, Math.min(10, -6 + scrollY * 0.015));
+  const heroRotateX = Math.max(-2, Math.min(8, 6 - scrollY * 0.01));
+  const heroLift = Math.min(scrollY * 0.06, 18);
+  const primaryRise = Math.max(0, 26 - scrollY * 0.04);
+  const advancedRise = Math.max(0, 36 - scrollY * 0.04);
 
   return (
     <AppShell>
@@ -144,10 +160,10 @@ export default function HomePage() {
         </div>
 
         <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <section className="rounded-3xl border border-[#d7e4d8] bg-white/95 p-7 shadow-lg sm:p-10">
+          <section className="rounded-3xl border border-[#d7e4d8] bg-white/80 p-7 shadow-lg backdrop-blur-xl sm:p-10">
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#d7e4d8] bg-[#f7fbf8] px-3 py-1.5 text-xs font-semibold text-black">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#d7e4d8] bg-white/60 px-3 py-1.5 text-xs font-semibold text-black backdrop-blur-md">
                   <Sparkles className="h-3.5 w-3.5 text-[#7B2D8B]" />
                   Smart Metro Platform
                 </div>
@@ -182,28 +198,36 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="grid w-full max-w-md grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-[#e6d6ec] bg-[#faf5fc] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Core</p>
-                  <p className="mt-2 text-lg font-bold text-black">Commuter + Wallet</p>
-                </div>
-                <div className="rounded-2xl border border-[#d6ebde] bg-[#f1fbf5] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Security</p>
-                  <p className="mt-2 text-lg font-bold text-black">HMAC + Bloom</p>
-                </div>
-                <div className="rounded-2xl border border-[#d6ebde] bg-[#f1fbf5] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Live</p>
-                  <p className="mt-2 text-lg font-bold text-black">Train Simulation</p>
-                </div>
-                <div className="rounded-2xl border border-[#e6d6ec] bg-[#faf5fc] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Intelligence</p>
-                  <p className="mt-2 text-lg font-bold text-black">XAI Ops</p>
+              <div className="relative w-full max-w-xl [perspective:1600px]">
+                <div
+                  className="relative overflow-hidden rounded-3xl border border-white/50 bg-white/30 p-2 shadow-[0_30px_80px_-35px_rgba(17,17,17,0.45)] backdrop-blur-xl"
+                  style={{
+                    transform: `translateY(${heroLift}px) rotateY(${heroRotateY}deg) rotateX(${heroRotateX}deg)`,
+                    transformStyle: 'preserve-3d',
+                  }}
+                >
+                  <div className="relative h-72 w-full overflow-hidden rounded-2xl sm:h-80">
+                    <Image
+                      src="/image2.png"
+                      alt="Bengaluru Namma Metro train"
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <section className="mt-10">
+          <section
+            className="mt-10"
+            style={{
+              transform: `translateY(${primaryRise}px)`,
+              opacity: Math.max(0.75, Math.min(1, 0.78 + scrollY * 0.0016)),
+            }}
+          >
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-black">Primary Modules</h2>
               <span className="text-sm text-gray-600">Commuter-first workflow</span>
@@ -215,7 +239,13 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section className="mt-10 pb-2">
+          <section
+            className="mt-10 pb-2"
+            style={{
+              transform: `translateY(${advancedRise}px)`,
+              opacity: Math.max(0.75, Math.min(1, 0.72 + scrollY * 0.0015)),
+            }}
+          >
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-black">Advanced Operations</h2>
               <span className="text-sm text-gray-600">Preserved with direct access</span>
