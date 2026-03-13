@@ -81,9 +81,6 @@ export default function Header() {
             <Link href="/trains" className="text-black hover:text-[#7B2D8B] font-medium transition">
               {t('nav.trains')}
             </Link>
-            <Link href="/commuter" className="text-black hover:text-[#00A550] font-medium transition">
-              Live Map
-            </Link>
             <Link href="/edge-gate" className="text-black hover:text-[#00A550] font-medium transition">
               Edge Gate
             </Link>
@@ -235,13 +232,6 @@ export default function Header() {
                 className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
               >
                 {t('nav.trains')}
-              </Link>
-              <Link
-                href="/commuter"
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
-              >
-                Live Map
               </Link>
               <Link
                 href="/edge-gate"

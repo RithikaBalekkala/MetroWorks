@@ -14,6 +14,7 @@ import {
 } from '@/lib/metro-network';
 import { serialiseTicket } from '@/lib/crypto-ticket';
 import { getSimulatedTrains, TrainPosition } from '@/lib/gtfs-simulator';
+import LiveMetroMap from '@/components/LiveMetroMap';
 import QRCode from 'react-qr-code';
 import {
   MapPin,
@@ -127,6 +128,11 @@ export default function CommuterView() {
 
       {/* Content */}
       <div className="relative z-10 p-4">
+        {inlineMessage && (
+          <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+            {inlineMessage}
+          </div>
+        )}
         {tab === 'planner' && (
           <RoutePlannerTab
             fromStation={fromStation}
@@ -146,7 +152,27 @@ export default function CommuterView() {
           />
         )}
         {tab === 'live' && (
-          <LiveMapTab trains={trains} fromStation={fromStation} />
+          <LiveMetroMap
+            trains={trains}
+            fromStationId={fromStation}
+            toStationId={toStation}
+            onSelectStation={(stationId) => {
+              if (!fromStation) {
+                setFromStation(stationId);
+                return;
+              }
+              if (!toStation && stationId !== fromStation) {
+                setToStation(stationId);
+                return;
+              }
+              if (stationId === fromStation) {
+                setFromStation('');
+              } else if (stationId === toStation) {
+                setToStation('');
+              }
+            }}
+            title="GTFS Real-Time Tracking"
+          />
         )}
       </div>
     </div>
@@ -444,162 +470,3 @@ function TicketTab({
   );
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Live GTFS Train Tracking Map
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function LiveMapTab({ trains, fromStation }: { trains: TrainPosition[]; fromStation: string }) {
-  const selectedStation = ALL_STATIONS.find(s => s.id === fromStation);
-
-  // Map boundaries for Bengaluru metro network
-  const mapBounds = {
-    minLat: 12.84, maxLat: 13.10,
-    minLng: 77.50, maxLng: 77.76,
-  };
-
-  const project = (lat: number, lng: number) => ({
-    x: ((lng - mapBounds.minLng) / (mapBounds.maxLng - mapBounds.minLng)) * 100,
-    y: 100 - ((lat - mapBounds.minLat) / (mapBounds.maxLat - mapBounds.minLat)) * 100,
-  });
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold flex items-center gap-2">
-          <Zap className="w-4 h-4 text-yellow-400" />
-          GTFS Real-Time Tracking
-        </h3>
-        <span className="text-[10px] font-mono text-black/40">
-          {trains.length} trains active
-        </span>
-      </div>
-
-      {/* Map Container */}
-      <div className="relative bg-[#f2f7f3]/60 border border-gray-200 rounded-2xl overflow-hidden" style={{ height: 400 }}>
-        {/* Grid background */}
-        <div className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
-            backgroundSize: '20px 20px',
-          }}
-        />
-
-        {/* SVG Map Layer */}
-        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-          {/* Purple Line Track */}
-          <polyline
-            points={PURPLE_LINE.map(s => {
-              const p = project(s.lat, s.lng);
-              return `${p.x},${p.y}`;
-            }).join(' ')}
-            fill="none"
-            stroke="#7B2D8E"
-            strokeWidth="0.5"
-            strokeOpacity="0.5"
-          />
-          {/* Green Line Track */}
-          <polyline
-            points={GREEN_LINE.map(s => {
-              const p = project(s.lat, s.lng);
-              return `${p.x},${p.y}`;
-            }).join(' ')}
-            fill="none"
-            stroke="#009A49"
-            strokeWidth="0.5"
-            strokeOpacity="0.5"
-          />
-
-          {/* Station Dots */}
-          {ALL_STATIONS.map(s => {
-            const p = project(s.lat, s.lng);
-            const isSelected = s.id === fromStation;
-            const isInterchange = s.interchange && s.interchange.length > 1;
-            return (
-              <g key={s.id}>
-                <circle
-                  cx={p.x} cy={p.y}
-                  r={isInterchange ? 1.2 : 0.6}
-                  fill={isSelected ? '#facc15' : isInterchange ? '#ffffff' : s.line === 'purple' ? '#7B2D8E' : '#009A49'}
-                  stroke={isSelected ? '#facc15' : 'none'}
-                  strokeWidth={isSelected ? 0.4 : 0}
-                  opacity={isSelected ? 1 : 0.7}
-                />
-                {isSelected && (
-                  <circle cx={p.x} cy={p.y} r={2.5} fill="none" stroke="#facc15" strokeWidth="0.3" opacity="0.5">
-                    <animate attributeName="r" from="1.5" to="3.5" dur="1.5s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" from="0.6" to="0" dur="1.5s" repeatCount="indefinite" />
-                  </circle>
-                )}
-              </g>
-            );
-          })}
-
-          {/* Train Markers */}
-          {trains.map(t => {
-            const p = project(t.lat, t.lng);
-            const color = t.line === 'purple' ? '#a855f7' : '#22c55e';
-            return (
-              <g key={t.trainId}>
-                <rect
-                  x={p.x - 1}
-                  y={p.y - 0.5}
-                  width={2}
-                  height={1}
-                  rx={0.3}
-                  fill={color}
-                  stroke="white"
-                  strokeWidth="0.15"
-                />
-                {/* Pulse ring */}
-                <circle cx={p.x} cy={p.y} r={1.5} fill="none" stroke={color} strokeWidth="0.2" opacity="0.3">
-                  <animate attributeName="r" from="1" to="2.5" dur="2s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" from="0.5" to="0" dur="2s" repeatCount="indefinite" />
-                </circle>
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Legend */}
-        <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur rounded-lg px-3 py-2 space-y-1">
-          <div className="flex items-center gap-2 text-[9px] text-black/60">
-            <div className="w-3 h-1.5 rounded-sm bg-purple-500" /> Purple Line
-          </div>
-          <div className="flex items-center gap-2 text-[9px] text-black/60">
-            <div className="w-3 h-1.5 rounded-sm bg-green-500" /> Green Line
-          </div>
-          <div className="flex items-center gap-2 text-[9px] text-black/60">
-            <div className="w-2 h-2 rounded-full bg-yellow-400" /> Selected
-          </div>
-        </div>
-
-        {/* Selected station tooltip */}
-        {selectedStation && (
-          <div className="absolute top-2 right-2 bg-black/70 backdrop-blur rounded-lg px-3 py-2">
-            <p className="text-[10px] text-black/50">Your Station</p>
-            <p className="text-xs font-bold text-yellow-400">{selectedStation.name}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Train List */}
-      <div className="space-y-2">
-        <h4 className="text-xs font-mono text-black/40 uppercase tracking-wider">Nearby Trains</h4>
-        {trains.slice(0, 5).map(t => (
-          <div key={t.trainId} className="flex items-center gap-3 bg-[#f2f7f3]/40 rounded-xl p-3 border border-gray-100">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${t.line === 'purple' ? 'bg-purple-500/20' : 'bg-green-500/20'}`}>
-              <Train className={`w-4 h-4 ${t.line === 'purple' ? 'text-purple-400' : 'text-green-400'}`} />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-medium">{t.trainId}</p>
-              <p className="text-[10px] text-black/40">{t.currentStation.name} → {t.nextStation?.name}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-bold text-green-400">{Math.round(t.speed)} km/h</p>
-              <p className="text-[10px] text-black/40">{t.occupancy}% full</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
+import LiveMetroMap from '@/components/LiveMetroMap';
 import { useTranslation } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import { useWallet } from '@/lib/wallet-context';
 import { useBooking } from '@/lib/booking-context';
+import { getSimulatedTrains } from '@/lib/gtfs-simulator';
 import { ALL_STATIONS, calculateRoute, type Station, type RouteResult } from '@/lib/metro-network';
 import {
   Train,
@@ -19,7 +21,19 @@ import {
   AlertCircle,
   CheckCircle,
   ChevronDown,
+  ChevronUp,
+  LocateFixed,
 } from 'lucide-react';
+
+type DoorSide = 'LEFT' | 'RIGHT' | 'BOTH';
+
+function getBoardingPreview(stationId: string): { platform: 1 | 2; doorSide: DoorSide } {
+  const hash = stationId.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const platform = hash % 2 === 0 ? 1 : 2;
+  const sideIndex = hash % 3;
+  const doorSide: DoorSide = sideIndex === 0 ? 'LEFT' : sideIndex === 1 ? 'RIGHT' : 'BOTH';
+  return { platform, doorSide };
+}
 
 export default function BookingPage() {
   const router = useRouter();
@@ -52,6 +66,15 @@ export default function BookingPage() {
   const [step, setStep] = useState<'select' | 'confirm' | 'success'>('select');
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [liveMapExpanded, setLiveMapExpanded] = useState(false);
+  const [stationSelectionMode, setStationSelectionMode] = useState<'from' | 'to'>('from');
+
+  const [tickMs, setTickMs] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTickMs(Date.now()), 1500);
+    return () => clearInterval(timer);
+  }, []);
+  const trains = useMemo(() => getSimulatedTrains(tickMs), [tickMs]);
 
   // Sort stations alphabetically
   const sortedStations = useMemo(() => {
@@ -98,6 +121,7 @@ export default function BookingPage() {
 
   const totalFare = routeResult ? routeResult.fare * passengers : 0;
   const canPay = canAfford(totalFare);
+  const boardingPreview = toStation ? getBoardingPreview(toStation) : null;
 
   const handleConfirmBooking = async () => {
     if (!routeResult || !canPay) return;
@@ -120,6 +144,8 @@ export default function BookingPage() {
     createTicket({
       fromStation: getStationName(fromStation),
       toStation: getStationName(toStation),
+      platform: boardingPreview?.platform,
+      doorSide: boardingPreview?.doorSide,
       date,
       time,
       passengers,
@@ -190,6 +216,94 @@ export default function BookingPage() {
             <span>{t('dashboard.walletBalance')}</span>
           </div>
           <span className="text-xl font-bold">₹{balance.toFixed(2)}</span>
+        </div>
+
+        {/* Expandable Live Map */}
+        <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <button
+            onClick={() => setLiveMapExpanded(prev => !prev)}
+            className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left"
+          >
+            <div>
+              <p className="text-sm font-semibold text-black">Live Map Assisted Booking</p>
+              <p className="text-xs text-gray-600">
+                Select stations from live map, view train movement, platform arrival, and door-side info
+              </p>
+            </div>
+            {liveMapExpanded ? (
+              <ChevronUp className="h-5 w-5 text-[#7B2D8B]" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-[#7B2D8B]" />
+            )}
+          </button>
+
+          {liveMapExpanded && (
+            <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setStationSelectionMode('from')}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    stationSelectionMode === 'from'
+                      ? 'bg-[#7B2D8B] text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Select Source on Map
+                </button>
+                <button
+                  onClick={() => setStationSelectionMode('to')}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    stationSelectionMode === 'to'
+                      ? 'bg-[#00A550] text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Select Destination on Map
+                </button>
+                <div className="ml-auto flex items-center gap-2 rounded-lg bg-[#f2f7f3] px-3 py-1.5 text-xs text-gray-700">
+                  <LocateFixed className="h-3.5 w-3.5 text-[#00A550]" />
+                  GPS + Simulator Fallback
+                </div>
+              </div>
+
+              <LiveMetroMap
+                trains={trains}
+                fromStationId={fromStation}
+                toStationId={toStation}
+                compact
+                destinationPlatform={boardingPreview?.platform}
+                destinationDoorSide={boardingPreview?.doorSide}
+                onSelectStation={(stationId) => {
+                  setError('');
+                  if (stationSelectionMode === 'from') {
+                    if (stationId === toStation) {
+                      setError('Source and destination cannot be the same');
+                      return;
+                    }
+                    setFromStation(stationId);
+                    return;
+                  }
+
+                  if (stationId === fromStation) {
+                    setError('Source and destination cannot be the same');
+                    return;
+                  }
+                  setToStation(stationId);
+                }}
+                title="Live Metro Network"
+              />
+
+              <div className="mt-3 rounded-xl border border-[#d7e4d8] bg-[#f7fbf8] p-3 text-sm text-black">
+                <p className="font-semibold">Wallet-Linked Payment</p>
+                <p className="mt-1 text-xs text-gray-700">
+                  After selecting source and destination, proceed with route confirmation and pay directly from your E-Wallet.
+                </p>
+                <p className="mt-1 text-xs text-gray-700">
+                  Current wallet balance: <span className="font-semibold text-[#7B2D8B]">₹{balance.toFixed(2)}</span>
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -399,7 +513,11 @@ export default function BookingPage() {
                       </div>
                       <div>
                         <p className="text-gray-500">{t('booking.platform')}</p>
-                        <p className="font-semibold">Platform 1/2</p>
+                        <p className="font-semibold">Platform {boardingPreview?.platform ?? '1/2'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Door Side</p>
+                        <p className="font-semibold">{boardingPreview?.doorSide ?? '-'}</p>
                       </div>
                       <div>
                         <p className="text-gray-500">{t('booking.passengers')}</p>

@@ -40,6 +40,8 @@ interface BookingContextType {
 interface CreateTicketParams {
   fromStation: string;
   toStation: string;
+  platform?: number;
+  doorSide?: DoorSide;
   date: string;
   time: string;
   passengers: number;
@@ -141,8 +143,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       id: generateTicketId(),
       fromStation: params.fromStation,
       toStation: params.toStation,
-      platform: getRandomPlatform(),
-      doorSide: getRandomDoorSide(),
+      platform: params.platform ?? getRandomPlatform(),
+      doorSide: params.doorSide ?? getRandomDoorSide(),
       date: params.date,
       time: params.time,
       passengers: params.passengers,

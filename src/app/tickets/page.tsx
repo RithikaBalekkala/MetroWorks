@@ -60,6 +60,8 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned }: TicketCardPro
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(ticket.status === 'ACTIVE');
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(ticket.expiresAt));
+  const [qrRefreshNonce, setQrRefreshNonce] = useState(() => Date.now());
+  const [qrRefreshCountdown, setQrRefreshCountdown] = useState(30);
 
   // Update countdown every minute
   useEffect(() => {
@@ -71,6 +73,25 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned }: TicketCardPro
 
     return () => clearInterval(interval);
   }, [ticket.status, ticket.expiresAt]);
+
+  // Keep QR visual payload rotating every 30 seconds for active tickets
+  useEffect(() => {
+    if (ticket.status !== 'ACTIVE') return;
+
+    const refreshInterval = setInterval(() => {
+      setQrRefreshNonce(Date.now());
+      setQrRefreshCountdown(30);
+    }, 30000);
+
+    const countdownInterval = setInterval(() => {
+      setQrRefreshCountdown(prev => (prev <= 1 ? 30 : prev - 1));
+    }, 1000);
+
+    return () => {
+      clearInterval(refreshInterval);
+      clearInterval(countdownInterval);
+    };
+  }, [ticket.status]);
 
   const isExpired = new Date(ticket.expiresAt) < new Date();
   const isActive = ticket.status === 'ACTIVE' && !isExpired;
@@ -86,6 +107,7 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned }: TicketCardPro
     passengers: ticket.passengers,
     fare: ticket.totalFare,
     hmac: ticket.hmacSignature,
+    refreshNonce: qrRefreshNonce,
   });
 
   return (
@@ -131,6 +153,11 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned }: TicketCardPro
                   fgColor={isActive ? '#7B2D8B' : '#9CA3AF'}
                 />
               </div>
+              {isActive && (
+                <div className="mt-2 text-center">
+                  <p className="text-[11px] font-medium text-[#7B2D8B]">QR refresh in {qrRefreshCountdown}s</p>
+                </div>
+              )}
               {!isActive && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-xl">
                   <span className="text-white font-bold text-xl transform -rotate-12">
