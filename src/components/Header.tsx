@@ -78,6 +78,9 @@ export default function Header() {
                 <Link href="/booking" className="text-black hover:text-[#00A550] font-medium transition">
                   {t('nav.booking')}
                 </Link>
+                <Link href="/tickets?lostFound=1" className="text-black hover:text-[#d97706] font-medium transition">
+                  Lost and Found
+                </Link>
               </>
             )}
           </nav>
@@ -252,6 +255,13 @@ export default function Header() {
                     className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
                   >
                     {t('nav.tickets')}
+                  </Link>
+                  <Link
+                    href="/tickets?lostFound=1"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2 text-black hover:bg-[#fff7ed] rounded-lg"
+                  >
+                    Lost and Found
                   </Link>
                   <Link
                     href="/wallet"

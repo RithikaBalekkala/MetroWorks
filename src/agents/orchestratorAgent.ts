@@ -2,6 +2,7 @@ import { LlmAgent } from '@google/adk';
 import { chatAgent } from '@/agents/chatAgent';
 import { crowdAgent } from '@/agents/crowdAgent';
 import { frequencyAgent } from '@/agents/frequencyAgent';
+import { lostAndFoundAgent } from '@/agents/lostAndFoundAgent';
 import { placesAgent } from '@/agents/placesAgent';
 import { refundAgent } from '@/agents/refundAgent';
 import type { AmenityCategory } from '@/lib/metro-network';
@@ -17,6 +18,12 @@ export const AMENITY_KEYWORDS = [
   'government', 'court', 'secretariat',
   'nearby', 'near', 'close to', 'around', 'walking distance',
   'what is near', 'what\'s near', 'facilities',
+] as const;
+
+export const LOST_AND_FOUND_KEYWORDS = [
+  'lost', 'missing', 'left behind', 'forgot in train', 'forgot at station',
+  'found item', 'lost and found', 'misplaced', 'stolen', 'wallet lost',
+  'phone lost', 'bag lost', 'laptop lost', 'recover item',
 ] as const;
 
 export function detectAmenityCategoryFromMessage(message: string): AmenityCategory | null {
@@ -41,6 +48,11 @@ export function shouldRouteToPlacesForAmenity(message: string): boolean {
   return AMENITY_KEYWORDS.some(keyword => text.includes(keyword));
 }
 
+export function shouldRouteToLostAndFound(message: string): boolean {
+  const text = message.toLowerCase();
+  return LOST_AND_FOUND_KEYWORDS.some(keyword => text.includes(keyword));
+}
+
 const orchestratorInstruction = [
   'You are BMRCL Orchestrator Agent for a Bengaluru Metro demo system.',
   'Choose the right specialist agent and return concise JSON-only outputs.',
@@ -48,7 +60,9 @@ const orchestratorInstruction = [
   'Refund email drafting -> refundAgent.',
   'Nearby recommendations around station -> placesAgent.',
   'Amenity and nearby facility queries (hospitals, hotels, malls, education, tourism, tech parks, railway, bus terminal, government) -> placesAgent.',
+  'Lost and found issues for misplaced items -> lostAndFoundAgent.',
   `Amenity keyword hints: ${AMENITY_KEYWORDS.join(', ')}.`,
+  `Lost and found keyword hints: ${LOST_AND_FOUND_KEYWORDS.join(', ')}.`,
   'If an amenity category is detectable from user text, include it in your output intent payload.',
   'Crowd prediction and surge monitoring -> crowdAgent.',
   'Frequency change + commuter notification -> frequencyAgent.',
@@ -58,7 +72,7 @@ const orchestratorInstruction = [
 export const orchestratorAgent = new LlmAgent({
   name: 'orchestrator_agent',
   model: 'gemini-2.5-flash',
-  description: 'Routes intents to specialist metro agents for chat, refund, places, and crowd operations.',
+  description: 'Routes intents to specialist metro agents for chat, refund, places, lost and found, and crowd operations.',
   instruction: orchestratorInstruction,
-  subAgents: [chatAgent, refundAgent, placesAgent, crowdAgent, frequencyAgent],
+  subAgents: [chatAgent, refundAgent, placesAgent, lostAndFoundAgent, crowdAgent, frequencyAgent],
 });

@@ -3,11 +3,12 @@ import { chatAgent } from '@/agents/chatAgent';
 import { crowdAgent } from '@/agents/crowdAgent';
 import { frequencyAgent } from '@/agents/frequencyAgent';
 import { homeChatAgent } from '@/agents/homeChatAgent';
+import { lostAndFoundAgent } from '@/agents/lostAndFoundAgent';
 import { orchestratorAgent } from '@/agents/orchestratorAgent';
 import { placesAgent } from '@/agents/placesAgent';
 import { refundAgent } from '@/agents/refundAgent';
 
-type AgentKey = 'orchestrator' | 'home-chat' | 'chat' | 'refund' | 'places' | 'crowd' | 'frequency';
+type AgentKey = 'orchestrator' | 'home-chat' | 'chat' | 'refund' | 'places' | 'crowd' | 'frequency' | 'lost-and-found';
 
 const APP_NAME = 'bmrcl-platform';
 const USER_ID = 'local-user';
@@ -22,6 +23,8 @@ function getAgent(agentKey: AgentKey) {
       return orchestratorAgent;
     case 'home-chat':
       return homeChatAgent;
+    case 'lost-and-found':
+      return lostAndFoundAgent;
     case 'chat':
       return chatAgent;
     case 'refund':

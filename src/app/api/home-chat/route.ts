@@ -3,9 +3,10 @@ import { calculateRoute, ALL_STATIONS } from '@/lib/metro-network';
 import { runWithFallback } from '@/lib/adk/mock-runner';
 import { parseJsonSafe } from '@/lib/adk/runner';
 import type { AmenityCategory } from '@/lib/metro-network';
-import { getStationAmenities } from '@/lib/metro-network';
+import { findNearestParkingStations, getStationAmenities, getStationParking } from '@/lib/metro-network';
 import { queryAmenityByCategory } from '@/agents/placesAgent';
-import { detectAmenityCategoryFromMessage, shouldRouteToPlacesForAmenity } from '@/agents/orchestratorAgent';
+import { queryLostAndFoundAssistance } from '@/agents/lostAndFoundAgent';
+import { detectAmenityCategoryFromMessage, shouldRouteToLostAndFound, shouldRouteToPlacesForAmenity } from '@/agents/orchestratorAgent';
 
 interface HomeChatRequest {
   message?: string;
@@ -25,6 +26,28 @@ interface AmenityChatResponse {
   stations: string[];
   primaryRecommendation: string;
   details: string;
+  userQuery: string;
+}
+
+interface ParkingChatResponse {
+  answerType: 'PARKING';
+  stationName: string;
+  parking: ReturnType<typeof getStationParking>;
+  nearbyStations: string[];
+  userQuery: string;
+}
+
+interface LostFoundChatResponse {
+  answerType: 'LOST_FOUND';
+  stationName: string;
+  category: string;
+  caseIdTemplate: string;
+  deskLocation: string;
+  contactNumber: string;
+  operatingHours: string;
+  escalationOffice: string;
+  etaForCallbackHours: number;
+  nextSteps: string[];
   userQuery: string;
 }
 
@@ -108,6 +131,23 @@ function buildAmenityResponse(message: string): AmenityChatResponse | null {
     details: result.details,
     userQuery: message,
   };
+}
+
+function buildParkingResponse(message: string): ParkingChatResponse | null {
+  const stationName = extractStationMention(message);
+  if (!stationName) return null;
+
+  return {
+    answerType: 'PARKING',
+    stationName,
+    parking: getStationParking(stationName),
+    nearbyStations: findNearestParkingStations(stationName, 4),
+    userQuery: message,
+  };
+}
+
+function buildLostFoundResponse(message: string): LostFoundChatResponse {
+  return queryLostAndFoundAssistance({ userQuery: message });
 }
 
 function routeFacts(fromName: string, toName: string): Record<string, string> {
@@ -195,6 +235,17 @@ export async function POST(request: Request) {
   const message = (body.message ?? '').trim();
   if (!message) {
     return NextResponse.json({ status: 'ok', data: fallbackGeneralAnswer() });
+  }
+
+  if (shouldRouteToLostAndFound(message)) {
+    return NextResponse.json({ status: 'ok', data: buildLostFoundResponse(message) });
+  }
+
+  if (/parking|park and ride|car park|bike park|vehicle parking/.test(message.toLowerCase())) {
+    const parkingResponse = buildParkingResponse(message);
+    if (parkingResponse) {
+      return NextResponse.json({ status: 'ok', data: parkingResponse });
+    }
   }
 
   if (shouldRouteToPlacesForAmenity(message)) {

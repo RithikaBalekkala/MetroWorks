@@ -27,6 +27,28 @@ export interface AmenityInfo {
   description: string;
 }
 
+export type ParkingVehicleType = 'BIKE' | 'CAR';
+
+export interface ParkingFacility {
+  vehicleType: ParkingVehicleType;
+  totalSpots: number;
+  availableSpots: number;
+  hourlyRate: number;
+  fullDayRate: number;
+  paymentModes: string[];
+  covered: boolean;
+  cctvEnabled: boolean;
+}
+
+export interface StationParkingInfo {
+  available: boolean;
+  open24x7: boolean;
+  facilityName: string;
+  entryGate: string;
+  lastUpdatedIso: string;
+  facilities: ParkingFacility[];
+}
+
 export interface Station {
   id: string;
   name: string;
@@ -39,6 +61,7 @@ export interface Station {
   interchange?: LineColor[];
   amenities?: AmenityCategory[];
   amenityDetails?: AmenityInfo[];
+  parking?: StationParkingInfo;
 }
 
 export interface RouteSegment {
@@ -61,6 +84,10 @@ export interface RouteResult {
 interface StationAmenityPayload {
   amenities: AmenityCategory[];
   amenityDetails: AmenityInfo[];
+}
+
+interface StationParkingPayload {
+  parking: StationParkingInfo;
 }
 
 const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
@@ -339,6 +366,185 @@ const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
   },
 };
 
+const STATION_PARKING_MAP: Record<string, StationParkingPayload> = {
+  whitefield: {
+    parking: {
+      available: true,
+      open24x7: true,
+      facilityName: 'Whitefield Multi-Level Metro Parking',
+      entryGate: 'Gate B',
+      lastUpdatedIso: '2026-03-14T09:00:00+05:30',
+      facilities: [
+        {
+          vehicleType: 'BIKE',
+          totalSpots: 420,
+          availableSpots: 188,
+          hourlyRate: 10,
+          fullDayRate: 60,
+          paymentModes: ['UPI', 'Card', 'Cash'],
+          covered: true,
+          cctvEnabled: true,
+        },
+        {
+          vehicleType: 'CAR',
+          totalSpots: 160,
+          availableSpots: 56,
+          hourlyRate: 30,
+          fullDayRate: 180,
+          paymentModes: ['UPI', 'Card'],
+          covered: true,
+          cctvEnabled: true,
+        },
+      ],
+    },
+  },
+  indiranagar: {
+    parking: {
+      available: true,
+      open24x7: false,
+      facilityName: 'Indiranagar Metro Smart Parking',
+      entryGate: 'Gate A',
+      lastUpdatedIso: '2026-03-14T09:00:00+05:30',
+      facilities: [
+        {
+          vehicleType: 'BIKE',
+          totalSpots: 220,
+          availableSpots: 74,
+          hourlyRate: 10,
+          fullDayRate: 50,
+          paymentModes: ['UPI', 'Card', 'Cash'],
+          covered: false,
+          cctvEnabled: true,
+        },
+        {
+          vehicleType: 'CAR',
+          totalSpots: 90,
+          availableSpots: 18,
+          hourlyRate: 30,
+          fullDayRate: 160,
+          paymentModes: ['UPI', 'Card'],
+          covered: false,
+          cctvEnabled: true,
+        },
+      ],
+    },
+  },
+  yeshwanthpur: {
+    parking: {
+      available: true,
+      open24x7: true,
+      facilityName: 'Yeshwanthpur Transit Parking',
+      entryGate: 'Gate C',
+      lastUpdatedIso: '2026-03-14T09:00:00+05:30',
+      facilities: [
+        {
+          vehicleType: 'BIKE',
+          totalSpots: 260,
+          availableSpots: 120,
+          hourlyRate: 10,
+          fullDayRate: 55,
+          paymentModes: ['UPI', 'Card', 'Cash'],
+          covered: true,
+          cctvEnabled: true,
+        },
+        {
+          vehicleType: 'CAR',
+          totalSpots: 110,
+          availableSpots: 41,
+          hourlyRate: 30,
+          fullDayRate: 170,
+          paymentModes: ['UPI', 'Card'],
+          covered: true,
+          cctvEnabled: true,
+        },
+      ],
+    },
+  },
+  jayanagar: {
+    parking: {
+      available: true,
+      open24x7: false,
+      facilityName: 'Jayanagar Metro Parking Yard',
+      entryGate: 'Gate D',
+      lastUpdatedIso: '2026-03-14T09:00:00+05:30',
+      facilities: [
+        {
+          vehicleType: 'BIKE',
+          totalSpots: 210,
+          availableSpots: 96,
+          hourlyRate: 10,
+          fullDayRate: 50,
+          paymentModes: ['UPI', 'Card', 'Cash'],
+          covered: false,
+          cctvEnabled: true,
+        },
+      ],
+    },
+  },
+  'nadaprabhu kempegowda station majestic': {
+    parking: {
+      available: true,
+      open24x7: true,
+      facilityName: 'Majestic Interchange Parking Plaza',
+      entryGate: 'Gate 4',
+      lastUpdatedIso: '2026-03-14T09:00:00+05:30',
+      facilities: [
+        {
+          vehicleType: 'BIKE',
+          totalSpots: 600,
+          availableSpots: 210,
+          hourlyRate: 10,
+          fullDayRate: 70,
+          paymentModes: ['UPI', 'Card', 'Cash'],
+          covered: true,
+          cctvEnabled: true,
+        },
+        {
+          vehicleType: 'CAR',
+          totalSpots: 280,
+          availableSpots: 63,
+          hourlyRate: 35,
+          fullDayRate: 210,
+          paymentModes: ['UPI', 'Card'],
+          covered: true,
+          cctvEnabled: true,
+        },
+      ],
+    },
+  },
+  'silk institute': {
+    parking: {
+      available: true,
+      open24x7: true,
+      facilityName: 'Silk Institute Park and Ride',
+      entryGate: 'Gate A',
+      lastUpdatedIso: '2026-03-14T09:00:00+05:30',
+      facilities: [
+        {
+          vehicleType: 'BIKE',
+          totalSpots: 340,
+          availableSpots: 172,
+          hourlyRate: 10,
+          fullDayRate: 55,
+          paymentModes: ['UPI', 'Card', 'Cash'],
+          covered: false,
+          cctvEnabled: true,
+        },
+        {
+          vehicleType: 'CAR',
+          totalSpots: 130,
+          availableSpots: 52,
+          hourlyRate: 30,
+          fullDayRate: 180,
+          paymentModes: ['UPI', 'Card'],
+          covered: false,
+          cctvEnabled: true,
+        },
+      ],
+    },
+  },
+};
+
 const STATION_NAME_ALIAS: Record<string, string> = {
   'mg road': 'mahatma gandhi road',
   'majestic (kempegowda)': 'nadaprabhu kempegowda station majestic',
@@ -354,6 +560,12 @@ const STATION_NAME_ALIAS: Record<string, string> = {
   'peenya industry': 'peenya',
 };
 
+const STATION_PARKING_ALIAS: Record<string, string> = {
+  ...STATION_NAME_ALIAS,
+  'kempegowda station': 'nadaprabhu kempegowda station majestic',
+  'majestic station': 'nadaprabhu kempegowda station majestic',
+};
+
 function normalizeAmenityStationName(stationName: string): string {
   return stationName.trim().toLowerCase().replace(/\s+/g, ' ');
 }
@@ -363,9 +575,19 @@ function resolveAmenityStationName(stationName: string): string {
   return STATION_NAME_ALIAS[normalized] ?? normalized;
 }
 
+function resolveParkingStationName(stationName: string): string {
+  const normalized = normalizeAmenityStationName(stationName);
+  return STATION_PARKING_ALIAS[normalized] ?? normalized;
+}
+
 function getStationAmenityPayload(stationName: string): StationAmenityPayload | null {
   const resolved = resolveAmenityStationName(stationName);
   return STATION_AMENITY_MAP[resolved] ?? null;
+}
+
+function getStationParkingPayload(stationName: string): StationParkingPayload | null {
+  const resolved = resolveParkingStationName(stationName);
+  return STATION_PARKING_MAP[resolved] ?? null;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -446,6 +668,7 @@ const greenStations: Omit<Station, 'line'>[] = [
 // Combine into typed stations
 export const PURPLE_LINE: Station[] = purpleStations.map(s => {
   const amenityPayload = getStationAmenityPayload(s.name);
+  const parkingPayload = getStationParkingPayload(s.name);
   return {
     ...s,
     line: 'purple' as LineColor,
@@ -453,17 +676,24 @@ export const PURPLE_LINE: Station[] = purpleStations.map(s => {
       amenities: amenityPayload.amenities,
       amenityDetails: amenityPayload.amenityDetails,
     } : {}),
+    ...(parkingPayload ? {
+      parking: parkingPayload.parking,
+    } : {}),
   };
 });
 
 export const GREEN_LINE: Station[]  = greenStations.map(s => {
   const amenityPayload = getStationAmenityPayload(s.name);
+  const parkingPayload = getStationParkingPayload(s.name);
   return {
     ...s,
     line: 'green' as LineColor,
     ...(amenityPayload ? {
       amenities: amenityPayload.amenities,
       amenityDetails: amenityPayload.amenityDetails,
+    } : {}),
+    ...(parkingPayload ? {
+      parking: parkingPayload.parking,
     } : {}),
   };
 });
@@ -842,4 +1072,53 @@ export function getAmenityDetails(
     s => resolveAmenityStationName(s.name) === resolveAmenityStationName(stationName)
   );
   return station?.amenityDetails ?? [];
+}
+
+export function getStationParking(stationName: string): StationParkingInfo | null {
+  const station = ALL_STATIONS.find(
+    s => resolveParkingStationName(s.name) === resolveParkingStationName(stationName)
+  );
+  return station?.parking ?? null;
+}
+
+export function hasParkingForVehicle(stationName: string, vehicleType: ParkingVehicleType): boolean {
+  const parking = getStationParking(stationName);
+  if (!parking || !parking.available) return false;
+
+  return parking.facilities.some(
+    facility => facility.vehicleType === vehicleType && facility.availableSpots > 0
+  );
+}
+
+export function getStationsWithParking(vehicleType?: ParkingVehicleType): string[] {
+  return ALL_STATIONS
+    .filter(station => {
+      if (!station.parking || !station.parking.available) return false;
+      if (!vehicleType) return true;
+
+      return station.parking.facilities.some(
+        facility => facility.vehicleType === vehicleType && facility.availableSpots > 0
+      );
+    })
+    .map(station => station.name);
+}
+
+export function findNearestParkingStations(stationName: string, limit = 5): string[] {
+  const source = ALL_STATIONS.find(
+    station => resolveParkingStationName(station.name) === resolveParkingStationName(stationName)
+  );
+
+  const parkingStations = ALL_STATIONS.filter(station => station.parking?.available);
+  if (!source) return parkingStations.slice(0, limit).map(station => station.name);
+
+  return parkingStations
+    .sort((a, b) => {
+      const sameLineBoostA = a.line === source.line ? 0 : 3;
+      const sameLineBoostB = b.line === source.line ? 0 : 3;
+      const distanceA = Math.abs(a.index - source.index) + sameLineBoostA;
+      const distanceB = Math.abs(b.index - source.index) + sameLineBoostB;
+      return distanceA - distanceB;
+    })
+    .slice(0, limit)
+    .map(station => station.name);
 }

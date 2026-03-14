@@ -12,13 +12,16 @@ import { getSimulatedTrains } from '@/lib/gtfs-simulator';
 import {
   ALL_STATIONS,
   calculateRoute,
+  hasParkingForVehicle,
   getStationAmenities,
   type AmenityCategory,
+  type ParkingVehicleType,
   type Station,
   type RouteResult,
 } from '@/lib/metro-network';
 import { getAmenityConfig } from '@/lib/amenity-config';
 import { AmenityBadgeGroup } from '@/components/AmenityBadge';
+import ParkingBadge from '@/components/ParkingBadge';
 import {
   Train,
   MapPin,
@@ -68,6 +71,7 @@ function BookingStationSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<AmenityCategory[]>([]);
+  const [activeParkingFilters, setActiveParkingFilters] = useState<ParkingVehicleType[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const AMENITY_FILTERS: AmenityCategory[] = [
@@ -92,12 +96,17 @@ function BookingStationSelector({
       const matchSearch = !normalized || station.name.toLowerCase().includes(normalized);
       if (!matchSearch) return false;
 
+      if (activeParkingFilters.length > 0) {
+        const hasMatchingParking = activeParkingFilters.some(vehicle => hasParkingForVehicle(station.name, vehicle));
+        if (!hasMatchingParking) return false;
+      }
+
       if (activeFilters.length === 0) return true;
 
       const categories = getStationAmenities(station.name);
       return categories.some(category => activeFilters.includes(category));
     });
-  }, [activeFilters, excludeStationId, query, stations]);
+  }, [activeFilters, activeParkingFilters, excludeStationId, query, stations]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -180,6 +189,44 @@ function BookingStationSelector({
               </div>
             </div>
 
+            <div className="mt-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">Filter by parking:</p>
+                {activeParkingFilters.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveParkingFilters([])}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    Clear parking
+                  </button>
+                )}
+              </div>
+              <div className="mt-1 flex gap-1">
+                {(['BIKE', 'CAR'] as ParkingVehicleType[]).map(vehicle => {
+                  const isActive = activeParkingFilters.includes(vehicle);
+                  return (
+                    <button
+                      key={vehicle}
+                      type="button"
+                      onClick={() => setActiveParkingFilters(prev => (
+                        prev.includes(vehicle)
+                          ? prev.filter(item => item !== vehicle)
+                          : [...prev, vehicle]
+                      ))}
+                      className={`text-xs border rounded-full px-2 py-0.5 ${
+                        isActive
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-white text-gray-600 border-gray-300'
+                      }`}
+                    >
+                      {vehicle === 'BIKE' ? 'Bike Parking' : 'Car Parking'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="mt-2 max-h-64 overflow-y-auto space-y-1">
               {filteredStations.length === 0 ? (
                 <p className="text-xs text-gray-500 px-2 py-2">No stations match search/filter.</p>
@@ -204,11 +251,14 @@ function BookingStationSelector({
                         {station.line === 'purple' ? '● Purple' : '● Green'}
                       </span>
                     </div>
-                    <AmenityBadgeGroup
-                      categories={getStationAmenities(station.name)}
-                      size="xs"
-                      maxVisible={3}
-                    />
+                    <div className="flex items-center gap-1">
+                      <ParkingBadge stationName={station.name} size="xs" />
+                      <AmenityBadgeGroup
+                        categories={getStationAmenities(station.name)}
+                        size="xs"
+                        maxVisible={3}
+                      />
+                    </div>
                   </button>
                 ))
               )}

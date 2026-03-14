@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Bot, MessageCircle, Send, X } from 'lucide-react';
-import type { AmenityCategory } from '@/lib/metro-network';
+import type { AmenityCategory, StationParkingInfo } from '@/lib/metro-network';
 import AmenityResponseCard from '@/components/AmenityResponseCard';
 
 interface ChatAnswer {
@@ -22,10 +22,32 @@ interface AmenityAnswer {
   userQuery: string;
 }
 
+interface ParkingAnswer {
+  answerType: 'PARKING';
+  stationName: string;
+  parking: StationParkingInfo | null;
+  nearbyStations: string[];
+  userQuery: string;
+}
+
+interface LostFoundAnswer {
+  answerType: 'LOST_FOUND';
+  stationName: string;
+  category: string;
+  caseIdTemplate: string;
+  deskLocation: string;
+  contactNumber: string;
+  operatingHours: string;
+  escalationOffice: string;
+  etaForCallbackHours: number;
+  nextSteps: string[];
+  userQuery: string;
+}
+
 interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
-  answer?: ChatAnswer | AmenityAnswer;
+  answer?: ChatAnswer | AmenityAnswer | ParkingAnswer | LostFoundAnswer;
 }
 
 const starterQuestions = [
@@ -33,10 +55,20 @@ const starterQuestions = [
   'Route from Indiranagar to Jayanagar',
   'What are train timings and frequency?',
   'Which station is nearest to a hospital?',
+  'Parking availability at Majestic',
+  'I lost my wallet in metro',
 ];
 
-function isAmenityAnswer(value: ChatAnswer | AmenityAnswer): value is AmenityAnswer {
+function isAmenityAnswer(value: ChatAnswer | AmenityAnswer | ParkingAnswer | LostFoundAnswer): value is AmenityAnswer {
   return value.answerType === 'AMENITY';
+}
+
+function isParkingAnswer(value: ChatAnswer | AmenityAnswer | ParkingAnswer | LostFoundAnswer): value is ParkingAnswer {
+  return value.answerType === 'PARKING';
+}
+
+function isLostFoundAnswer(value: ChatAnswer | AmenityAnswer | ParkingAnswer | LostFoundAnswer): value is LostFoundAnswer {
+  return value.answerType === 'LOST_FOUND';
 }
 
 export default function HomeAIChatbot() {
@@ -67,7 +99,7 @@ export default function HomeAIChatbot() {
         body: JSON.stringify({ message: q }),
       });
       const json = await res.json();
-      const data: ChatAnswer | AmenityAnswer | undefined = json?.data;
+      const data: ChatAnswer | AmenityAnswer | ParkingAnswer | LostFoundAnswer | undefined = json?.data;
 
       if (!data) {
         setMessages(prev => [
@@ -80,7 +112,13 @@ export default function HomeAIChatbot() {
       } else {
         const assistantText = isAmenityAnswer(data)
           ? `Best station: ${data.primaryRecommendation}`
-          : data.summary;
+          : isParkingAnswer(data)
+            ? data.parking
+              ? `Parking at ${data.stationName}: ${data.parking.facilityName}`
+              : `No parking data for ${data.stationName}`
+            : isLostFoundAnswer(data)
+              ? `Lost and found desk: ${data.stationName}`
+              : data.summary;
 
         setMessages(prev => [
           ...prev,
@@ -153,6 +191,40 @@ export default function HomeAIChatbot() {
                         details={msg.answer.details}
                         userQuery={msg.answer.userQuery}
                       />
+                    ) : isParkingAnswer(msg.answer) ? (
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold text-black">Parking near {msg.answer.stationName}</p>
+                        {msg.answer.parking ? (
+                          <>
+                            <p className="text-xs text-gray-700">{msg.answer.parking.facilityName}</p>
+                            <div className="space-y-1 text-xs text-gray-700">
+                              {msg.answer.parking.facilities.map(facility => (
+                                <p key={facility.vehicleType}>
+                                  {facility.vehicleType}: {facility.availableSpots}/{facility.totalSpots} • Rs {facility.hourlyRate}/hr
+                                </p>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xs text-gray-700">Parking information unavailable for this station.</p>
+                        )}
+                        {msg.answer.nearbyStations.length > 0 && (
+                          <p className="text-xs text-gray-500">Nearby alternatives: {msg.answer.nearbyStations.join(', ')}</p>
+                        )}
+                      </div>
+                    ) : isLostFoundAnswer(msg.answer) ? (
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold text-black">Lost and Found Guidance</p>
+                        <p className="text-xs text-gray-700">Desk: {msg.answer.stationName} • {msg.answer.deskLocation}</p>
+                        <p className="text-xs text-gray-700">Contact: {msg.answer.contactNumber} • {msg.answer.operatingHours}</p>
+                        <p className="text-xs text-gray-700">Case template: {msg.answer.caseIdTemplate}</p>
+                        <p className="text-xs text-gray-700">Escalation: {msg.answer.escalationOffice}</p>
+                        <div className="space-y-1">
+                          {msg.answer.nextSteps.slice(0, 3).map(step => (
+                            <p key={step} className="text-xs text-gray-700">• {step}</p>
+                          ))}
+                        </div>
+                      </div>
                     ) : (
                       <>
                         <p className="text-sm font-semibold text-black">{msg.answer.title}</p>
