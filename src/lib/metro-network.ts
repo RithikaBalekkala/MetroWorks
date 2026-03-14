@@ -233,3 +233,234 @@ export function calculateRoute(fromId: string, toId: string): RouteResult | null
 export function lineColorHex(line: LineColor): string {
   return line === 'purple' ? '#7B2D8E' : '#009A49';
 }
+
+import type { ModificationAnalysis, JourneyLine } from '@/types/modification';
+
+function toJourneyLine(line: LineColor): Exclude<JourneyLine, 'INTERCHANGE'> {
+  return line === 'purple' ? 'PURPLE' : 'GREEN';
+}
+
+function normalizeStationKey(stationName: string): string {
+  return stationName.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function findStationByName(stationName: string): Station | undefined {
+  const normalized = normalizeStationKey(stationName);
+  return ALL_STATIONS.find(station => station.name.toLowerCase() === normalized);
+}
+
+export function getStationIndex(stationName: string, line: 'PURPLE' | 'GREEN'): number {
+  const normalized = normalizeStationKey(stationName);
+  const stations = line === 'PURPLE' ? PURPLE_LINE : GREEN_LINE;
+  const station = stations.find(st => st.name.toLowerCase() === normalized);
+  return station ? station.index : -1;
+}
+
+export function getJourneyLine(fromStation: string, toStation: string): JourneyLine {
+  const from = findStationByName(fromStation);
+  const to = findStationByName(toStation);
+
+  if (!from || !to) {
+    return 'INTERCHANGE';
+  }
+
+  if (from.line === to.line) {
+    return toJourneyLine(from.line);
+  }
+
+  return 'INTERCHANGE';
+}
+
+export function analyseModification(
+  fromStation: string,
+  originalDestination: string,
+  newDestination: string
+): ModificationAnalysis {
+  const fromKey = normalizeStationKey(fromStation);
+  const originalKey = normalizeStationKey(originalDestination);
+  const newDestinationKey = normalizeStationKey(newDestination);
+
+  if (newDestinationKey === fromKey) {
+    return {
+      modificationType: 'INVALID',
+      originalFare: 0,
+      newFare: 0,
+      fareDifference: 0,
+      refundAmount: 0,
+      extraCharge: 0,
+      originalStops: 0,
+      newStops: 0,
+      newLine: 'INTERCHANGE',
+      errorReason: 'Destination cannot be the same as origin',
+    };
+  }
+
+  if (newDestinationKey === originalKey) {
+    return {
+      modificationType: 'INVALID',
+      originalFare: 0,
+      newFare: 0,
+      fareDifference: 0,
+      refundAmount: 0,
+      extraCharge: 0,
+      originalStops: 0,
+      newStops: 0,
+      newLine: 'INTERCHANGE',
+      errorReason: 'This is already your destination',
+    };
+  }
+
+  const from = findStationByName(fromStation);
+  const original = findStationByName(originalDestination);
+  const destination = findStationByName(newDestination);
+
+  if (!from || !original || !destination) {
+    return {
+      modificationType: 'INVALID',
+      originalFare: 0,
+      newFare: 0,
+      fareDifference: 0,
+      refundAmount: 0,
+      extraCharge: 0,
+      originalStops: 0,
+      newStops: 0,
+      newLine: 'INTERCHANGE',
+      errorReason: 'No valid route found to selected station',
+    };
+  }
+
+  const originalRoute = calculateRoute(from.id, original.id);
+  const newRoute = calculateRoute(from.id, destination.id);
+
+  if (!originalRoute || !newRoute) {
+    return {
+      modificationType: 'INVALID',
+      originalFare: originalRoute?.fare ?? 0,
+      newFare: newRoute?.fare ?? 0,
+      fareDifference: 0,
+      refundAmount: 0,
+      extraCharge: 0,
+      originalStops: originalRoute?.totalStations ?? 0,
+      newStops: newRoute?.totalStations ?? 0,
+      newLine: getJourneyLine(fromStation, newDestination),
+      errorReason: 'No valid route found to selected station',
+    };
+  }
+
+  if (newRoute.interchanges.length > 1 || originalRoute.interchanges.length > 1) {
+    return {
+      modificationType: 'INVALID',
+      originalFare: originalRoute.fare,
+      newFare: newRoute.fare,
+      fareDifference: Math.abs(newRoute.fare - originalRoute.fare),
+      refundAmount: 0,
+      extraCharge: 0,
+      originalStops: originalRoute.totalStations,
+      newStops: newRoute.totalStations,
+      newLine: getJourneyLine(fromStation, newDestination),
+      errorReason: 'Cross-line modifications not supported',
+    };
+  }
+
+  const originalLine = getJourneyLine(fromStation, originalDestination);
+  const newLine = getJourneyLine(fromStation, newDestination);
+
+  if (originalLine === 'INTERCHANGE' || newLine === 'INTERCHANGE' || originalLine !== newLine) {
+    return {
+      modificationType: 'INVALID',
+      originalFare: originalRoute.fare,
+      newFare: newRoute.fare,
+      fareDifference: Math.abs(newRoute.fare - originalRoute.fare),
+      refundAmount: 0,
+      extraCharge: 0,
+      originalStops: originalRoute.totalStations,
+      newStops: newRoute.totalStations,
+      newLine,
+      errorReason: 'Cross-line modifications not supported',
+    };
+  }
+
+  const fromIndex = getStationIndex(fromStation, originalLine);
+  const originalIndex = getStationIndex(originalDestination, originalLine);
+  const newIndex = getStationIndex(newDestination, newLine);
+
+  if (fromIndex < 0 || originalIndex < 0 || newIndex < 0) {
+    return {
+      modificationType: 'INVALID',
+      originalFare: originalRoute.fare,
+      newFare: newRoute.fare,
+      fareDifference: Math.abs(newRoute.fare - originalRoute.fare),
+      refundAmount: 0,
+      extraCharge: 0,
+      originalStops: originalRoute.totalStations,
+      newStops: newRoute.totalStations,
+      newLine,
+      errorReason: 'Could not determine station order for modification',
+    };
+  }
+
+  const originalOffset = originalIndex - fromIndex;
+  const newOffset = newIndex - fromIndex;
+
+  if (originalOffset === 0 || newOffset === 0) {
+    return {
+      modificationType: 'INVALID',
+      originalFare: originalRoute.fare,
+      newFare: newRoute.fare,
+      fareDifference: Math.abs(newRoute.fare - originalRoute.fare),
+      refundAmount: 0,
+      extraCharge: 0,
+      originalStops: originalRoute.totalStations,
+      newStops: newRoute.totalStations,
+      newLine,
+      errorReason: 'Destination cannot be the same as origin',
+    };
+  }
+
+  if (Math.sign(originalOffset) !== Math.sign(newOffset)) {
+    return {
+      modificationType: 'INVALID',
+      originalFare: originalRoute.fare,
+      newFare: newRoute.fare,
+      fareDifference: Math.abs(newRoute.fare - originalRoute.fare),
+      refundAmount: 0,
+      extraCharge: 0,
+      originalStops: originalRoute.totalStations,
+      newStops: newRoute.totalStations,
+      newLine,
+      errorReason: 'New destination must stay in the same travel direction',
+    };
+  }
+
+  const extension = Math.abs(newOffset) > Math.abs(originalOffset);
+  const shortening = Math.abs(newOffset) < Math.abs(originalOffset);
+
+  if (!extension && !shortening) {
+    return {
+      modificationType: 'INVALID',
+      originalFare: originalRoute.fare,
+      newFare: newRoute.fare,
+      fareDifference: 0,
+      refundAmount: 0,
+      extraCharge: 0,
+      originalStops: originalRoute.totalStations,
+      newStops: newRoute.totalStations,
+      newLine,
+      errorReason: 'This is already your destination',
+    };
+  }
+
+  const fareDifference = Math.abs(newRoute.fare - originalRoute.fare);
+
+  return {
+    modificationType: extension ? 'EXTENSION' : 'SHORTENING',
+    originalFare: originalRoute.fare,
+    newFare: newRoute.fare,
+    fareDifference,
+    refundAmount: extension ? 0 : fareDifference,
+    extraCharge: extension ? fareDifference : 0,
+    originalStops: originalRoute.totalStations,
+    newStops: newRoute.totalStations,
+    newLine,
+  };
+}

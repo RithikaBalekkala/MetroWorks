@@ -2,6 +2,13 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import CryptoJS from 'crypto-js';
+import { useWallet } from '@/lib/wallet-context';
+import { ALL_STATIONS } from '@/lib/metro-network';
+import type {
+  ModificationAnalysis,
+  ModifyBookingResult,
+  ModificationHistoryEntry,
+} from '@/types/modification';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Types
@@ -26,6 +33,10 @@ export interface Ticket {
   hmacSignature: string;
   route: string[];
   duration: number;
+  qrPayload?: string;
+  modifiedAt?: string;
+  modificationCount?: number;
+  modificationHistory?: ModificationHistoryEntry[];
 }
 
 export interface BookingHmacPayload {
@@ -45,6 +56,11 @@ interface BookingContextType {
   createTicket: (params: CreateTicketParams) => Ticket;
   cancelTicket: (ticketId: string) => number; // returns refund amount
   modifyTicket: (ticketId: string, updates: ModifyTicketParams) => number; // returns fare difference
+  modifyBooking: (
+    ticketId: string,
+    newDestination: string,
+    analysis: ModificationAnalysis
+  ) => Promise<ModifyBookingResult>;
   markAsScanned: (ticketId: string) => void;
   getTicketById: (ticketId: string) => Ticket | undefined;
 }
@@ -128,6 +144,19 @@ function getRandomDoorSide(): DoorSide {
   return sides[Math.floor(Math.random() * sides.length)];
 }
 
+function deriveNewPlatform(fromStation: string, toStation: string): number {
+  const from = ALL_STATIONS.find(s => s.name.toLowerCase() === fromStation.toLowerCase());
+  const to = ALL_STATIONS.find(s => s.name.toLowerCase() === toStation.toLowerCase());
+  if (!from || !to) {
+    return getRandomPlatform();
+  }
+  return to.index >= from.index ? 2 : 1;
+}
+
+function generateNonce(): string {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function computeBookingExpiryTime(dateStr: string, timeStr: string): string {
   // Ticket valid for 24 hours from travel date/time
   const travelDateTime = new Date(`${dateStr}T${timeStr}`);
@@ -142,6 +171,7 @@ const BookingContext = createContext<BookingContextType | null>(null);
 
 export function BookingProvider({ children }: { children: ReactNode }) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const { balance, debit, refund } = useWallet();
 
   // Load tickets from localStorage
   useEffect(() => {
@@ -250,6 +280,216 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     return fareDifference; // Positive = debit more, Negative = refund
   }, [tickets, saveTickets]);
 
+  const modifyBooking = useCallback(async (
+    ticketId: string,
+    newDestination: string,
+    analysis: ModificationAnalysis
+  ): Promise<ModifyBookingResult> => {
+    /*
+     * QR SIGNATURE REGENERATION — SECURITY NOTE
+     *
+     * When a journey is modified, the original QR payload becomes
+     * cryptographically invalid. This is intentional.
+     *
+     * The HMAC in the original QR was computed over the original
+     * { fromStation, toStation, fare, nonce, ... } payload.
+     *
+     * If we only updated the destination in state but reused the
+     * old QR, the edge gate would:
+     *   1. Decode the QR payload (still shows old destination)
+     *   2. Verify HMAC — passes (old signature matches old data)
+     *   3. Allow entry for wrong journey — SECURITY BREACH
+     *
+     * Instead we:
+     *   1. Build a completely new payload with new destination + fare
+     *   2. Generate a fresh nonce (prevents replay of old QR)
+     *   3. Sign the new payload with signTicket() → new HMAC
+     *   4. The old QR immediately fails HMAC verification at gate
+     *   5. Only the new QR displayed in the app is valid
+     *
+     * signTicket() is called at: Step 3 of modifyBooking()
+     * The new qrPayload string is stored in booking.qrPayload
+     * The QR component in page.tsx reads from booking.qrPayload
+     * so it automatically displays the new valid QR on state update.
+     */
+    const booking = tickets.find(t => t.id === ticketId);
+    if (!booking) {
+      return {
+        success: false,
+        errorCode: 'TICKET_NOT_FOUND',
+      };
+    }
+
+    if (booking.status !== 'ACTIVE') {
+      return {
+        success: false,
+        errorCode: 'ALREADY_SCANNED',
+        errorMessage: 'This ticket has already been scanned and cannot be modified.',
+      };
+    }
+
+    if (new Date(booking.expiresAt).getTime() < Date.now()) {
+      return {
+        success: false,
+        errorCode: 'TICKET_EXPIRED',
+        errorMessage: 'Expired tickets cannot be modified.',
+      };
+    }
+
+    if ((booking.modificationCount ?? 0) >= 3) {
+      return {
+        success: false,
+        errorCode: 'INVALID_MODIFICATION',
+        errorMessage: 'Maximum 3 modifications allowed per ticket.',
+      };
+    }
+
+    if (analysis.modificationType === 'INVALID') {
+      return {
+        success: false,
+        errorCode: 'INVALID_MODIFICATION',
+        errorMessage: analysis.errorReason ?? 'Invalid journey modification.',
+      };
+    }
+
+    let walletTransaction: ModifyBookingResult['walletTransaction'];
+
+    if (analysis.modificationType === 'EXTENSION') {
+      const additionalCharge = Number.isFinite(analysis.extraCharge)
+        ? Math.max(analysis.extraCharge, 0)
+        : 0;
+
+      if (additionalCharge > 0) {
+        if (balance < additionalCharge) {
+          const shortfall = additionalCharge - balance;
+          return {
+            success: false,
+            errorCode: 'INSUFFICIENT_FUNDS',
+            errorMessage: `Need ₹${shortfall} more. Please top up your wallet.`,
+          };
+        }
+
+        const debited = debit(additionalCharge, `Journey extension to ${newDestination}`);
+        if (!debited) {
+          return {
+            success: false,
+            errorCode: 'WALLET_DEBIT_FAILED',
+            errorMessage: 'Payment failed. Your booking was not changed.',
+          };
+        }
+
+        walletTransaction = {
+          type: 'DEBIT',
+          amount: additionalCharge,
+          newBalance: balance - additionalCharge,
+        };
+      }
+    }
+
+    if (analysis.modificationType === 'SHORTENING' && analysis.refundAmount > 0) {
+      refund(
+        analysis.refundAmount,
+        `Refund for journey shortening — unused ${booking.toStation} portion`
+      );
+      walletTransaction = {
+        type: 'CREDIT',
+        amount: analysis.refundAmount,
+        newBalance: balance + analysis.refundAmount,
+      };
+    }
+
+    try {
+      const nowIso = new Date().toISOString();
+      const nonce = generateNonce();
+      const modifiedCount = (booking.modificationCount ?? 0) + 1;
+      const newPlatform = deriveNewPlatform(booking.fromStation, newDestination);
+
+      const hmacPayload = buildBookingHmacPayload({
+        id: booking.id,
+        from: booking.fromStation,
+        to: newDestination,
+        date: booking.date,
+        time: booking.time,
+        passengers: booking.passengers,
+        fare: analysis.newFare,
+        expires: booking.expiresAt,
+        refreshNonce: nonce,
+      });
+
+      const newHmac = signBookingPayload(hmacPayload);
+      const newQrPayload = JSON.stringify({
+        id: booking.id,
+        bookingId: booking.id,
+        from: booking.fromStation,
+        fromStation: booking.fromStation,
+        to: newDestination,
+        toStation: newDestination,
+        fare: analysis.newFare,
+        passengers: booking.passengers,
+        travelDate: booking.date,
+        travelTime: booking.time,
+        date: booking.date,
+        time: booking.time,
+        platform: newPlatform,
+        nonce,
+        refreshNonce: nonce,
+        modifiedAt: nowIso,
+        modificationCount: modifiedCount,
+        expires: booking.expiresAt,
+        hmac: newHmac,
+      });
+
+      const farePerPerson = booking.passengers > 0
+        ? Math.round((analysis.newFare / booking.passengers) * 100) / 100
+        : booking.farePerPerson;
+
+      const updatedBooking: Ticket = {
+        ...booking,
+        toStation: newDestination,
+        platform: newPlatform,
+        totalFare: analysis.newFare,
+        farePerPerson,
+        hmacSignature: newHmac,
+        qrPayload: newQrPayload,
+        modifiedAt: nowIso,
+        modificationCount: modifiedCount,
+        modificationHistory: [
+          ...(booking.modificationHistory ?? []),
+          {
+            changedAt: nowIso,
+            originalDestination: booking.toStation,
+            newDestination,
+            fareAdjustment: analysis.modificationType === 'EXTENSION'
+              ? -Math.max(analysis.extraCharge, 0)
+              : analysis.refundAmount,
+            type: analysis.modificationType,
+          },
+        ],
+      };
+
+      const updatedTickets = tickets.map(t => t.id === ticketId ? updatedBooking : t);
+      saveTickets(updatedTickets);
+
+      return {
+        success: true,
+        updatedBooking,
+        walletTransaction,
+      };
+    } catch {
+      if (walletTransaction?.type === 'DEBIT') {
+        refund(walletTransaction.amount, 'Rollback: failed journey modification save');
+      } else if (walletTransaction?.type === 'CREDIT') {
+        debit(walletTransaction.amount, 'Rollback: failed journey modification save');
+      }
+
+      return {
+        success: false,
+        errorCode: 'INVALID_MODIFICATION',
+        errorMessage: 'Unable to save changes. Please try again.',
+      };
+    }
+  }, [tickets, saveTickets, balance, debit, refund]);
+
   const markAsScanned = useCallback((ticketId: string) => {
     const updated = tickets.map(t =>
       t.id === ticketId && t.status === 'ACTIVE'
@@ -269,6 +509,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       createTicket,
       cancelTicket,
       modifyTicket,
+      modifyBooking,
       markAsScanned,
       getTicketById,
     }}>

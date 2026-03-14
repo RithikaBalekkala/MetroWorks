@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,7 +9,7 @@ import AppShell from '@/components/AppShell';
 import { useTranslation } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import { useWallet } from '@/lib/wallet-context';
-import { GREEN_LINE, PURPLE_LINE } from '@/lib/metro-network';
+import { GREEN_LINE, PURPLE_LINE, analyseModification } from '@/lib/metro-network';
 import {
   useBooking,
   type Ticket,
@@ -17,6 +17,7 @@ import {
   buildBookingHmacPayload,
   signBookingPayload,
 } from '@/lib/booking-context';
+import type { ModificationAnalysis } from '@/types/modification';
 import {
   Ticket as TicketIcon,
   Clock,
@@ -186,6 +187,11 @@ interface TicketCardProps {
   onDraftRefund: (ticket: Ticket) => void;
 }
 
+function formatINR(amount?: number | null): string {
+  const safeAmount = typeof amount === 'number' && Number.isFinite(amount) ? amount : 0;
+  return safeAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
+}
+
 function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }: TicketCardProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(ticket.status === 'ACTIVE');
@@ -231,6 +237,8 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
   const doorDisplay = deriveDoorSide(ticket, primaryLine, directionLabel);
   const stopsCount = getStopsCount(ticket.route);
   const coachRecommendation = getCoachRecommendation(ticket, directionLabel);
+  const [showHistory, setShowHistory] = useState(false);
+  const maxModificationsReached = (ticket.modificationCount ?? 0) >= 3;
 
   // QR code data
   const qrPayload = buildBookingHmacPayload({
@@ -295,6 +303,11 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(ticket.status)}`}>
               {ticket.status}
             </span>
+            {(ticket.modificationCount ?? 0) > 0 && (
+              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                ✏️ Modified
+              </span>
+            )}
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </div>
@@ -422,10 +435,12 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
               </button>
               <button
                 onClick={() => onModify(ticket.id)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
+                disabled={maxModificationsReached}
+                title={maxModificationsReached ? 'Maximum 3 modifications allowed per ticket.' : undefined}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Edit className="w-4 h-4" />
-                {t('ticket.modify')}
+                ✏️ Modify Journey
               </button>
               <button
                 onClick={() => onCancel(ticket.id)}
@@ -444,6 +459,28 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
             </div>
           )}
 
+          {(ticket.modificationCount ?? 0) > 0 && (
+            <div className="mt-3 border-t border-gray-100 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowHistory(prev => !prev)}
+                className="text-xs text-gray-600 hover:text-gray-800"
+              >
+                ✏️ Modified {ticket.modificationCount} time(s) — View history {showHistory ? '▴' : '▾'}
+              </button>
+              {showHistory && (
+                <div className="mt-2 space-y-1 text-xs text-gray-500">
+                  {(ticket.modificationHistory ?? []).map((entry, idx) => (
+                    <p key={`${entry.changedAt}-${idx}`}>
+                      [{new Date(entry.changedAt).toLocaleString()}] {entry.originalDestination} → {entry.newDestination}{' '}
+                      [{entry.type} {entry.type === 'EXTENSION' ? '+' : '-'}{formatINR(Math.abs(entry.fareAdjustment))}]
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <p className="mt-4 text-xs text-gray-400 font-mono">ID: {ticket.id}</p>
         </div>
       )}
@@ -455,8 +492,8 @@ export default function TicketsPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuth();
-  const { refund } = useWallet();
-  const { tickets, cancelTicket, markAsScanned } = useBooking();
+  const { refund, balance } = useWallet();
+  const { tickets, cancelTicket, markAsScanned, modifyBooking } = useBooking();
 
   const [showCancelModal, setShowCancelModal] = useState<string | null>(null);
   const [showModifyModal, setShowModifyModal] = useState<string | null>(null);
@@ -469,6 +506,13 @@ export default function TicketsPage() {
   const [refundDraftFor, setRefundDraftFor] = useState<string>('');
   const [refundLoading, setRefundLoading] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [selectedDestination, setSelectedDestination] = useState('');
+  const [modificationAnalysis, setModificationAnalysis] = useState<ModificationAnalysis | null>(null);
+  const [modificationLoading, setModificationLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const modifyModalRef = useRef<HTMLDivElement | null>(null);
+  const ticketCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Redirect if not logged in — use localStorage and replace to avoid back-loop
   useEffect(() => {
@@ -490,10 +534,9 @@ export default function TicketsPage() {
   };
 
   const handleModify = (ticketId: string) => {
-    // For demo, just show a message. Full implementation would open a modal
-    // with pre-filled journey planner
-    alert('Modify functionality: In production, this would open a modal to change date/time/passengers');
-    setShowModifyModal(null);
+    setSelectedDestination('');
+    setModificationAnalysis(null);
+    setShowModifyModal(ticketId);
   };
 
   const handleMarkScanned = (ticketId: string) => {
@@ -546,6 +589,124 @@ export default function TicketsPage() {
   };
 
   const ticketToCancel = tickets.find(t => t.id === showCancelModal);
+  const ticketToModify = tickets.find(t => t.id === showModifyModal);
+
+  const groupedStations = useMemo(() => {
+    if (!ticketToModify) return { before: [] as string[], after: [] as string[] };
+
+    const from = ticketToModify.fromStation.trim().toLowerCase();
+    const current = ticketToModify.toStation.trim().toLowerCase();
+    const allStations = [...PURPLE_LINE, ...GREEN_LINE]
+      .map(st => st.name)
+      .filter(name => {
+        const normalized = name.trim().toLowerCase();
+        return normalized !== from && normalized !== current;
+      });
+
+    const before: string[] = [];
+    const after: string[] = [];
+
+    allStations.forEach(stationName => {
+      const analysis = analyseModification(ticketToModify.fromStation, ticketToModify.toStation, stationName);
+
+      if (analysis.modificationType === 'SHORTENING') {
+        before.push(stationName);
+      } else if (analysis.modificationType === 'EXTENSION') {
+        after.push(stationName);
+      }
+    });
+
+    return { before, after };
+  }, [ticketToModify]);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
+  useEffect(() => {
+    if (!showModifyModal) return;
+    const container = modifyModalRef.current;
+    if (!container) return;
+
+    const focusable = Array.from(
+      container.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    );
+    focusable[0]?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowModifyModal(null);
+        return;
+      }
+
+      if (event.key !== 'Tab' || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModifyModal]);
+
+  const handleDestinationSelect = (destination: string) => {
+    if (!ticketToModify) return;
+    setSelectedDestination(destination);
+    const analysis = analyseModification(
+      ticketToModify.fromStation,
+      ticketToModify.toStation,
+      destination,
+    );
+    setModificationAnalysis(analysis);
+  };
+
+  const handleConfirmModification = async () => {
+    if (!ticketToModify || !modificationAnalysis || !selectedDestination) return;
+
+    if (
+      modificationAnalysis.modificationType === 'EXTENSION' &&
+      balance < (modificationAnalysis.extraCharge ?? 0)
+    ) {
+      setToastType('error');
+      setToastMessage('Insufficient wallet balance. Please top up and try again.');
+      return;
+    }
+
+    setModificationLoading(true);
+    const result = await modifyBooking(ticketToModify.id, selectedDestination, modificationAnalysis);
+    setModificationLoading(false);
+
+    if (!result.success) {
+      setToastType('error');
+      setToastMessage(result.errorMessage ?? 'Unable to save changes. Please try again.');
+      return;
+    }
+
+    setShowModifyModal(null);
+    setSelectedDestination('');
+    setModificationAnalysis(null);
+
+    if (modificationAnalysis.modificationType === 'EXTENSION') {
+      setToastType('success');
+      setToastMessage(`Journey extended! ${formatINR(modificationAnalysis.extraCharge ?? 0)} deducted.`);
+    } else {
+      setToastType('success');
+      setToastMessage(`Journey shortened! ${formatINR(modificationAnalysis.refundAmount ?? 0)} refunded.`);
+    }
+
+    const node = ticketCardRefs.current[ticketToModify.id];
+    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   if (authLoading || !user) {
     return (
@@ -629,14 +790,15 @@ export default function TicketsPage() {
                 </h2>
                 <div className="space-y-4">
                   {activeTickets.map(ticket => (
-                    <TicketCard
-                      key={ticket.id}
-                      ticket={ticket}
-                      onCancel={() => setShowCancelModal(ticket.id)}
-                      onModify={() => setShowModifyModal(ticket.id)}
-                      onMarkScanned={handleMarkScanned}
-                      onDraftRefund={handleDraftRefund}
-                    />
+                    <div key={ticket.id} ref={node => { ticketCardRefs.current[ticket.id] = node; }}>
+                      <TicketCard
+                        ticket={ticket}
+                        onCancel={() => setShowCancelModal(ticket.id)}
+                        onModify={handleModify}
+                        onMarkScanned={handleMarkScanned}
+                        onDraftRefund={handleDraftRefund}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -650,14 +812,15 @@ export default function TicketsPage() {
                 </h2>
                 <div className="space-y-4">
                   {pastTickets.map(ticket => (
-                    <TicketCard
-                      key={ticket.id}
-                      ticket={ticket}
-                      onCancel={() => {}}
-                      onModify={() => {}}
-                      onMarkScanned={() => {}}
-                      onDraftRefund={() => {}}
-                    />
+                    <div key={ticket.id} ref={node => { ticketCardRefs.current[ticket.id] = node; }}>
+                      <TicketCard
+                        ticket={ticket}
+                        onCancel={() => {}}
+                        onModify={() => {}}
+                        onMarkScanned={() => {}}
+                        onDraftRefund={() => {}}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -723,6 +886,161 @@ export default function TicketsPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {showModifyModal && ticketToModify && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all duration-300 ease-in-out">
+          <div
+            ref={modifyModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Modify Journey"
+            className="w-full h-full sm:h-auto sm:max-w-lg bg-white sm:rounded-2xl shadow-2xl p-5 sm:p-6 overflow-y-auto transform transition-all duration-300 ease-in-out opacity-100 translate-y-0"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Modify Journey</h3>
+                <p className="text-sm text-gray-500">Change your destination station</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModifyModal(null)}
+                className="p-2 rounded-lg hover:bg-gray-100"
+                aria-label="Close modify journey modal"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="mt-4 p-3 rounded-lg bg-gray-50 border border-gray-100 text-sm">
+              <p className="font-medium text-gray-800">{ticketToModify.fromStation} → {ticketToModify.toStation}</p>
+              <p className="text-gray-500">{formatINR(ticketToModify.totalFare)} • {ticketToModify.passengers} passenger(s)</p>
+            </div>
+
+            <div className="mt-5">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select New Destination</label>
+              <select
+                value={selectedDestination}
+                onChange={e => handleDestinationSelect(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#7B2D8B]"
+                aria-label="Select new destination station"
+              >
+                <option value="">Choose station</option>
+                <optgroup label="Before Current Destination (Refund)">
+                  {groupedStations.before.length > 0 ? groupedStations.before.map(st => (
+                    <option key={`before-${st}`} value={st}>{st} • Refund available</option>
+                  )) : (
+                    <option disabled>No shortening options</option>
+                  )}
+                </optgroup>
+                <optgroup label="After Current Destination (Extra Fare)">
+                  {groupedStations.after.length > 0 ? groupedStations.after.map(st => (
+                    <option key={`after-${st}`} value={st}>{st} • Extra fare applies</option>
+                  )) : (
+                    <option disabled>No extension options</option>
+                  )}
+                </optgroup>
+              </select>
+            </div>
+
+            {modificationAnalysis && (
+              <div className="mt-4 transition-all duration-300 ease-in-out">
+                {modificationAnalysis.modificationType === 'INVALID' ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    ⚠ {modificationAnalysis.errorReason}
+                  </div>
+                ) : modificationAnalysis.modificationType === 'EXTENSION' ? (
+                  <div className="rounded-lg border border-purple-200 bg-white p-4">
+                    <div className="flex items-center justify-between text-sm"><span>New Destination</span><span className="font-semibold">{selectedDestination}</span></div>
+                    <div className="flex items-center justify-between text-sm mt-1"><span>Original Destination</span><span className="line-through text-gray-500">{ticketToModify.toStation}</span></div>
+                    <div className="flex items-center justify-between text-sm mt-1"><span>Journey Extended By</span><span>{Math.max(modificationAnalysis.newStops - modificationAnalysis.originalStops, 0)} stops</span></div>
+                    <hr className="my-3" />
+                    <div className="flex items-center justify-between text-sm"><span>Original Fare</span><span>{formatINR(modificationAnalysis.originalFare)}</span></div>
+                    <div className="flex items-center justify-between text-sm"><span>Additional Fare</span><span className="text-green-600">+ {formatINR(modificationAnalysis.extraCharge ?? 0)}</span></div>
+                    <div className="flex items-center justify-between text-sm font-semibold"><span>New Total Fare</span><span>{formatINR(modificationAnalysis.newFare)}</span></div>
+                    <hr className="my-3" />
+                    <div className="text-sm">
+                      <p>Current Wallet Balance: {formatINR(balance ?? 0)}</p>
+                      {balance >= (modificationAnalysis.extraCharge ?? 0) ? (
+                        <p className="text-green-600">✓ Sufficient balance</p>
+                      ) : (
+                        <div>
+                          <p className="text-amber-700">⚠ Insufficient balance. Need {formatINR((modificationAnalysis.extraCharge ?? 0) - (balance ?? 0))} more.</p>
+                          <button
+                            type="button"
+                            onClick={() => router.push('/wallet')}
+                            className="mt-1 text-sm text-[#7B2D8B] hover:underline"
+                            aria-label="Top up wallet"
+                          >
+                            Top Up Wallet →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <div className="flex items-center justify-between text-sm"><span>New Destination</span><span className="font-semibold">{selectedDestination}</span></div>
+                    <div className="flex items-center justify-between text-sm mt-1"><span>Original Destination</span><span className="line-through text-gray-500">{ticketToModify.toStation}</span></div>
+                    <div className="flex items-center justify-between text-sm mt-1"><span>Journey Shortened By</span><span>{Math.max(modificationAnalysis.originalStops - modificationAnalysis.newStops, 0)} stops</span></div>
+                    <hr className="my-3" />
+                    <div className="flex items-center justify-between text-sm"><span>Original Fare</span><span>{formatINR(modificationAnalysis.originalFare)}</span></div>
+                    <div className="flex items-center justify-between text-sm"><span>Refund Amount</span><span className="text-amber-700">- {formatINR(modificationAnalysis.refundAmount)}</span></div>
+                    <div className="flex items-center justify-between text-sm font-semibold"><span>New Total Fare</span><span>{formatINR(modificationAnalysis.newFare)}</span></div>
+                    <hr className="my-3" />
+                    <p className="text-green-700 text-sm">✓ {formatINR(modificationAnalysis.refundAmount)} will be credited to your E-Wallet</p>
+                    <p className="text-xs text-gray-500">Refund processed instantly on confirmation</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleConfirmModification}
+              disabled={
+                !selectedDestination ||
+                !modificationAnalysis ||
+                modificationAnalysis.modificationType === 'INVALID' ||
+                modificationLoading ||
+                (modificationAnalysis.modificationType === 'EXTENSION' && balance < (modificationAnalysis.extraCharge ?? 0))
+              }
+              className={`mt-5 w-full py-3 rounded-xl text-white font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed ${
+                modificationAnalysis?.modificationType === 'SHORTENING'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-[#7B2D8B] hover:bg-[#6a2679]'
+              }`}
+              aria-label="Confirm journey modification"
+            >
+              {modificationLoading ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Processing...
+                </span>
+              ) : !selectedDestination || !modificationAnalysis ? (
+                'Select a Valid Destination'
+              ) : modificationAnalysis.modificationType === 'INVALID' ? (
+                'Select a Valid Destination'
+              ) : modificationAnalysis.modificationType === 'EXTENSION' ? (
+                balance < (modificationAnalysis.extraCharge ?? 0)
+                  ? 'Insufficient Wallet Balance'
+                  : `Confirm & Pay ${formatINR(modificationAnalysis.extraCharge ?? 0)}`
+              ) : (
+                `Confirm & Get ${formatINR(modificationAnalysis.refundAmount ?? 0)} Refund`
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {toastMessage && (
+        <div
+          className={`fixed bottom-4 right-4 z-[60] px-4 py-3 rounded-xl shadow-xl text-white ${toastType === 'success' ? 'bg-green-600' : 'bg-red-600'}`}
+          role="status"
+          aria-live="polite"
+        >
+          {toastMessage}
         </div>
       )}
     </AppShell>
