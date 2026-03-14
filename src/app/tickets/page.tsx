@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
 import AppShell from '@/components/AppShell';
 import { useTranslation } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import { useWallet } from '@/lib/wallet-context';
+import { GREEN_LINE, PURPLE_LINE } from '@/lib/metro-network';
 import {
   useBooking,
   type Ticket,
@@ -27,6 +29,8 @@ import {
   ChevronDown,
   ChevronUp,
   QrCode,
+  ArrowRight,
+  Train,
 } from 'lucide-react';
 
 function formatTimeRemaining(expiresAt: string): string {
@@ -53,6 +57,125 @@ function getStatusColor(status: TicketStatus): string {
     case 'CANCELLED': return 'bg-red-100 text-red-700';
     default: return 'bg-gray-100 text-gray-700';
   }
+}
+
+type LineType = 'purple' | 'green' | 'interchange';
+type DoorDisplaySide = 'LEFT' | 'RIGHT';
+
+const purpleByName = new Map(PURPLE_LINE.map(st => [st.name.toLowerCase(), st]));
+const greenByName = new Map(GREEN_LINE.map(st => [st.name.toLowerCase(), st]));
+
+function normalizeStationName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+function detectLineType(ticket: Ticket): LineType {
+  const routeNames = ticket.route.map(normalizeStationName);
+  const hasPurple = routeNames.some(name => purpleByName.has(name));
+  const hasGreen = routeNames.some(name => greenByName.has(name));
+
+  if (hasPurple && hasGreen) return 'interchange';
+  return hasGreen ? 'green' : 'purple';
+}
+
+function getIndexOnLine(name: string, line: 'purple' | 'green'): number | null {
+  const key = normalizeStationName(name);
+  const station = line === 'purple' ? purpleByName.get(key) : greenByName.get(key);
+  return typeof station?.index === 'number' ? station.index : null;
+}
+
+function getPrimaryLineForDirection(ticket: Ticket, lineType: LineType): 'purple' | 'green' {
+  if (lineType !== 'interchange') return lineType;
+
+  const fromKey = normalizeStationName(ticket.fromStation);
+  const toKey = normalizeStationName(ticket.toStation);
+  const fromInPurple = purpleByName.has(fromKey);
+  const fromInGreen = greenByName.has(fromKey);
+  const toInPurple = purpleByName.has(toKey);
+  const toInGreen = greenByName.has(toKey);
+
+  if (fromInPurple && !fromInGreen) return 'purple';
+  if (fromInGreen && !fromInPurple) return 'green';
+  if (toInPurple && !toInGreen) return 'purple';
+  return 'green';
+}
+
+function getDirectionLabel(ticket: Ticket, line: 'purple' | 'green'): string {
+  const fromIdx = getIndexOnLine(ticket.fromStation, line);
+  const toIdx = getIndexOnLine(ticket.toStation, line);
+
+  if (fromIdx !== null && toIdx !== null) {
+    if (line === 'purple') {
+      return toIdx >= fromIdx ? 'Eastbound' : 'Westbound';
+    }
+    return toIdx < fromIdx ? 'Northbound' : 'Southbound';
+  }
+
+  if (line === 'purple') return 'Eastbound';
+  return 'Southbound';
+}
+
+function deriveDoorSide(ticket: Ticket, line: 'purple' | 'green', direction: string): DoorDisplaySide {
+  const destinationIdx = getIndexOnLine(ticket.toStation, line);
+  if (destinationIdx !== null) {
+    return destinationIdx % 2 === 0 ? 'LEFT' : 'RIGHT';
+  }
+
+  if (line === 'purple') {
+    return direction === 'Eastbound' ? 'RIGHT' : 'LEFT';
+  }
+  return direction === 'Northbound' ? 'LEFT' : 'RIGHT';
+}
+
+function getStopsCount(route: string[]): number {
+  if (!route.length) return 0;
+  return Math.max(route.length - 1, 0);
+}
+
+function isInterchangeDestination(stationName: string): boolean {
+  const normalized = normalizeStationName(stationName);
+  return normalized.includes('majestic') || normalized.includes('krishnarajapura');
+}
+
+function getCoachRecommendation(ticket: Ticket, direction: string): { coach: number; note: string } {
+  const stops = getStopsCount(ticket.route);
+  const directionForward = direction === 'Eastbound' || direction === 'Southbound';
+
+  if (isInterchangeDestination(ticket.toStation)) {
+    const coach = directionForward ? 6 : 1;
+    return {
+      coach,
+      note: `Board from Coach ${coach} for fastest exit at your destination`,
+    };
+  }
+
+  if (stops <= 5) {
+    const coach = directionForward ? 6 : 1;
+    return {
+      coach,
+      note: `Board from Coach ${coach} for fastest exit at your destination`,
+    };
+  }
+
+  if (stops <= 12) {
+    const coach = directionForward ? 4 : 3;
+    return {
+      coach,
+      note: `Board from Coach ${coach} for fastest exit at your destination`,
+    };
+  }
+
+  const coach = directionForward ? 5 : 2;
+  return {
+    coach,
+    note: `Board from Coach ${coach} for fastest exit at your destination`,
+  };
+}
+
+function getHeaderStripClasses(lineType: LineType): string {
+  if (lineType === 'green') return 'bg-gradient-to-r from-[#00A550] to-[#006B34]';
+  if (lineType === 'interchange') return 'bg-gradient-to-r from-[#7B2D8B] via-[#57509A] to-[#00A550]';
+  return 'bg-gradient-to-r from-[#7B2D8B] to-[#4A1A6E]';
 }
 
 interface TicketCardProps {
@@ -102,6 +225,12 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
 
   const isExpired = new Date(ticket.expiresAt) < new Date();
   const isActive = ticket.status === 'ACTIVE' && !isExpired;
+  const lineType = detectLineType(ticket);
+  const primaryLine = getPrimaryLineForDirection(ticket, lineType);
+  const directionLabel = getDirectionLabel(ticket, primaryLine);
+  const doorDisplay = deriveDoorSide(ticket, primaryLine, directionLabel);
+  const stopsCount = getStopsCount(ticket.route);
+  const coachRecommendation = getCoachRecommendation(ticket, directionLabel);
 
   // QR code data
   const qrPayload = buildBookingHmacPayload({
@@ -133,53 +262,145 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
   });
 
   return (
-    <div className={`bg-white rounded-2xl shadow-lg overflow-hidden transition ${
-      !isActive ? 'opacity-75' : ''
-    }`}>
-      {/* Header */}
+    <div className={`max-w-md md:max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden transition ${!isActive ? 'opacity-75' : ''}`}>
+      <div className="h-1 w-full bg-gradient-to-r from-[#7B2D8B] to-[#00A550]" />
+
       <div
-        className={`p-4 cursor-pointer ${
-          isActive ? 'bg-gradient-to-r from-[#7B2D8B] to-purple-700' : 'bg-gray-400'
-        }`}
+        className={`cursor-pointer px-4 py-3 ${getHeaderStripClasses(lineType)}`}
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center justify-between text-white">
-          <div className="flex items-center gap-3">
-            <TicketIcon className="w-5 h-5" />
-            <div>
-              <p className="font-semibold">{ticket.fromStation} → {ticket.toStation}</p>
-              <p className="text-sm text-white/80">{ticket.date} • {ticket.time}</p>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 text-white">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/namma-metro-logo.png"
+              alt="Namma Metro logo"
+              width={16}
+              height={16}
+              className="h-4 w-4 object-contain"
+            />
+            <span className="font-bold text-sm">Namma Metro</span>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-2">
+            {lineType === 'interchange' ? (
+              <div className="flex flex-col gap-1">
+                <span className="px-2 py-0.5 rounded-full bg-purple-700 text-white text-[10px] font-semibold">● Purple Line</span>
+                <span className="px-2 py-0.5 rounded-full bg-green-700 text-white text-[10px] font-semibold">● Green Line</span>
+              </div>
+            ) : (
+              <span className={`px-2 py-1 rounded-full text-white text-[10px] font-semibold ${lineType === 'purple' ? 'bg-purple-700' : 'bg-green-700'}`}>
+                ● {lineType === 'purple' ? 'Purple Line' : 'Green Line'}
+              </span>
+            )}
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(ticket.status)}`}>
               {ticket.status}
             </span>
-            {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </div>
       </div>
 
-      {/* Expanded Content */}
       {expanded && (
-        <div className="p-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* QR Code */}
-            <div className={`flex-shrink-0 relative ${!isActive ? 'grayscale' : ''}`}>
-              <div className="p-4 bg-white border-2 border-gray-200 rounded-xl inline-block">
+        <div className="p-4 md:p-6">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_220px] gap-4 md:gap-6 items-stretch">
+            <div className="space-y-4">
+              <div className="rounded-xl border border-gray-200 px-4 py-4 bg-white">
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500">From</p>
+                    <p className="text-xl font-bold text-gray-900 leading-tight">{ticket.fromStation}</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <span className="w-8 border-t border-dotted border-gray-400" />
+                    <ArrowRight className="w-4 h-4" />
+                    <span className="w-8 border-t border-dotted border-gray-400" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500">To</p>
+                    <p className="text-xl font-bold text-gray-900 leading-tight">{ticket.toStation}</p>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-gray-500">~{ticket.duration} mins • {stopsCount} stops</p>
+              </div>
+
+              <div className="rounded-xl border-2 border-[#F6AD55] bg-[#FFF8E7] p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+                  <div className="text-center sm:text-left">
+                    <p className="text-2xl">🚉</p>
+                    <p className="text-xs text-gray-500 uppercase mt-1">Platform</p>
+                    <p className="text-5xl leading-none font-extrabold text-[#7B2D8B] mt-1">{ticket.platform}</p>
+                    <p className="text-xs text-gray-600 mt-2">Platform {ticket.platform} — {directionLabel}</p>
+                  </div>
+
+                  <div className="hidden sm:block h-28 border-l-2 border-dashed border-[#E2A35A]" />
+
+                  <div className="text-center sm:text-left">
+                    <div className="mx-auto sm:mx-0 h-9 w-20 rounded-lg border border-gray-300 bg-white relative overflow-hidden">
+                      <div className={`absolute top-0 bottom-0 w-2 ${doorDisplay === 'LEFT' ? 'left-0 bg-[#00A550]' : 'left-0 bg-gray-300'}`} />
+                      <div className={`absolute top-0 bottom-0 w-2 ${doorDisplay === 'RIGHT' ? 'right-0 bg-[#00A550]' : 'right-0 bg-gray-300'}`} />
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                        <Train className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 uppercase mt-2">Doors Open</p>
+                    <p className="text-[22px] leading-tight font-extrabold text-[#00A550] mt-1">
+                      {doorDisplay === 'LEFT' ? '← LEFT SIDE' : 'RIGHT SIDE →'}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-2">
+                      Stand on the {doorDisplay === 'LEFT' ? 'left' : 'right'} side of the platform
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#90CDF4] bg-[#EBF8FF] p-3">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="text-base">🚃</span>
+                  <span className="font-semibold text-gray-700 uppercase tracking-wide text-xs">Recommended Coach</span>
+                  <span className="ml-auto font-bold text-[#2B6CB0]">Coach {coachRecommendation.coach} of 6</span>
+                </div>
+                <p className="text-xs text-[#2C5282] mt-1">{coachRecommendation.note}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase">{t('ticket.passengers')}</p>
+                  <p className="font-semibold text-lg text-gray-900">{ticket.passengers}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-500 uppercase">Total Fare</p>
+                  <p className="font-semibold text-lg text-[#7B2D8B]">₹{ticket.totalFare}</p>
+                </div>
+              </div>
+
+              {isActive && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
+                  <Clock className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-700">
+                    {t('ticket.validFor')}: {timeRemaining}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="hidden md:block border-l-2 border-dashed border-gray-300" />
+
+            <div className={`flex flex-col items-center justify-start relative ${!isActive ? 'grayscale' : ''}`}>
+              <div className="p-3 bg-white border-2 border-gray-200 rounded-xl">
                 <QRCodeSVG
                   value={qrData}
-                  size={160}
+                  size={170}
                   level="H"
                   includeMargin
                   fgColor={isActive ? '#7B2D8B' : '#9CA3AF'}
                 />
               </div>
               {isActive && (
-                <div className="mt-2 text-center">
-                  <p className="text-[11px] font-medium text-[#7B2D8B]">QR refresh in {qrRefreshCountdown}s</p>
-                </div>
+                <p className="mt-2 text-[11px] font-medium text-[#7B2D8B] text-center">
+                  QR refresh in {qrRefreshCountdown}s
+                </p>
               )}
+              <p className="mt-2 text-xs text-gray-500">{ticket.date} • {ticket.time}</p>
               {!isActive && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-xl">
                   <span className="text-white font-bold text-xl transform -rotate-12">
@@ -188,96 +409,42 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
                 </div>
               )}
             </div>
-
-            {/* Details */}
-            <div className="flex-1">
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">{t('ticket.platform')}</p>
-                  <p className="font-semibold text-lg">Platform {ticket.platform}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">{t('ticket.doorSide')}</p>
-                  <p className="font-semibold text-lg">{ticket.doorSide}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">{t('ticket.passengers')}</p>
-                  <p className="font-semibold text-lg">{ticket.passengers}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">Total Fare</p>
-                  <p className="font-semibold text-lg text-[#7B2D8B]">₹{ticket.totalFare}</p>
-                </div>
-              </div>
-
-              {/* Countdown */}
-              {isActive && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg mb-4">
-                  <Clock className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-700">
-                    {t('ticket.validFor')}: {timeRemaining}
-                  </span>
-                </div>
-              )}
-
-              {/* Route */}
-              <div className="mb-4">
-                <p className="text-xs text-gray-500 uppercase mb-2">Route ({ticket.duration} mins)</p>
-                <div className="flex flex-wrap gap-1">
-                  {ticket.route.slice(0, 5).map((station, idx) => (
-                    <span key={idx} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      {station}
-                    </span>
-                  ))}
-                  {ticket.route.length > 5 && (
-                    <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      +{ticket.route.length - 5} more
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions (only for active unscanned tickets) */}
-              {isActive && (
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => onDraftRefund(ticket)}
-                    className="flex items-center gap-2 px-4 py-2 bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition text-sm font-medium"
-                  >
-                    <AlertTriangle className="w-4 h-4" />
-                    Draft Refund Email
-                  </button>
-                  <button
-                    onClick={() => onModify(ticket.id)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
-                  >
-                    <Edit className="w-4 h-4" />
-                    {t('ticket.modify')}
-                  </button>
-                  <button
-                    onClick={() => onCancel(ticket.id)}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition text-sm font-medium"
-                  >
-                    <X className="w-4 h-4" />
-                    {t('ticket.cancel')}
-                  </button>
-                  {/* Demo: Mark as scanned */}
-                  <button
-                    onClick={() => onMarkScanned(ticket.id)}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
-                  >
-                    <Check className="w-4 h-4" />
-                    Mark Scanned (Demo)
-                  </button>
-                </div>
-              )}
-
-              {/* Ticket ID */}
-              <p className="mt-4 text-xs text-gray-400 font-mono">
-                ID: {ticket.id}
-              </p>
-            </div>
           </div>
+
+          {isActive && (
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                onClick={() => onDraftRefund(ticket)}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition text-sm font-medium"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                Draft Refund Email
+              </button>
+              <button
+                onClick={() => onModify(ticket.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
+              >
+                <Edit className="w-4 h-4" />
+                {t('ticket.modify')}
+              </button>
+              <button
+                onClick={() => onCancel(ticket.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition text-sm font-medium"
+              >
+                <X className="w-4 h-4" />
+                {t('ticket.cancel')}
+              </button>
+              <button
+                onClick={() => onMarkScanned(ticket.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
+              >
+                <Check className="w-4 h-4" />
+                Mark Scanned (Demo)
+              </button>
+            </div>
+          )}
+
+          <p className="mt-4 text-xs text-gray-400 font-mono">ID: {ticket.id}</p>
         </div>
       )}
     </div>
