@@ -71,7 +71,7 @@ function StationSearchDropdown({
 
   return (
     <div className="relative">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       <input
         value={query}
         onChange={event => {
@@ -82,7 +82,7 @@ function StationSearchDropdown({
         }}
         onFocus={() => setIsOpen(true)}
         placeholder={placeholder}
-        className={`w-full rounded-xl border px-3 py-2 text-sm bg-white dark:bg-gray-900 ${error ? 'border-red-400' : 'border-gray-300 dark:border-gray-700'}`}
+        className={`w-full rounded-xl border px-3 py-2 text-sm bg-white text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500 ${error ? 'border-red-400' : 'border-gray-300'}`}
       />
       {value ? (
         <button
@@ -99,8 +99,8 @@ function StationSearchDropdown({
       ) : null}
 
       {isOpen ? (
-        <div className="absolute z-30 mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg max-h-56 overflow-y-auto">
-          <div className="px-3 py-2 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40">Purple Line stations</div>
+        <div className="absolute z-30 mt-1 w-full rounded-xl border border-gray-200 bg-white shadow-lg max-h-56 overflow-y-auto">
+          <div className="px-3 py-2 text-xs font-semibold text-purple-700 bg-purple-50">Purple Line stations</div>
           {groupedStations.purple.map(name => (
             <button
               key={`purple-${name}`}
@@ -110,7 +110,7 @@ function StationSearchDropdown({
                 setQuery(name);
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               <span className="inline-flex items-center gap-2">
                 <span className="inline-block h-2 w-2 rounded-full bg-purple-600" />
@@ -120,7 +120,7 @@ function StationSearchDropdown({
           ))}
           {groupedStations.purple.length === 0 ? <p className="px-3 py-2 text-xs text-gray-500">No purple stations found</p> : null}
 
-          <div className="px-3 py-2 text-xs font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/30">Green Line stations</div>
+          <div className="px-3 py-2 text-xs font-semibold text-green-700 bg-green-50">Green Line stations</div>
           {groupedStations.green.map(name => (
             <button
               key={`green-${name}`}
@@ -130,7 +130,7 @@ function StationSearchDropdown({
                 setQuery(name);
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               <span className="inline-flex items-center gap-2">
                 <span className="inline-block h-2 w-2 rounded-full bg-green-600" />
@@ -455,24 +455,24 @@ export default function LostAndFoundPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-5 shadow-sm">
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-200 px-4 py-5 shadow-sm">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between">
-            <Link href="/" className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300">← Back</Link>
-            <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">BMRCL Lost & Found</span>
+            <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">← Back</Link>
+            <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">BMRCL Lost & Found</span>
           </div>
           <div className="mt-4">
             <div className="text-4xl">🔍</div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">Lost & Found</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Report lost items or search for found items at Namma Metro stations</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📞 Helpline: 1800-425-1663 · Any BMRCL station Lost & Found Office</p>
+            <h1 className="text-2xl font-bold text-gray-900 mt-1">Lost & Found</h1>
+            <p className="text-sm text-gray-600">Report lost items or search for found items at Namma Metro stations</p>
+            <p className="text-sm text-gray-500 mt-1">📞 Helpline: 1800-425-1663 · Any BMRCL station Lost & Found Office</p>
           </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6">
-        <div className="flex items-center gap-4 border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+        <div className="flex items-center gap-4 border-b border-gray-200 overflow-x-auto">
           {([
             { key: 'REPORT', label: '📝 Report Lost Item' },
             { key: 'SEARCH', label: '🔍 Search Found Items' },
@@ -482,7 +482,7 @@ export default function LostAndFoundPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`pb-3 text-sm whitespace-nowrap ${activeTab === tab.key ? 'border-b-2 border-purple-600 text-purple-700 dark:text-purple-400 font-semibold' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              className={`pb-3 text-sm whitespace-nowrap ${activeTab === tab.key ? 'border-b-2 border-purple-600 text-purple-700 font-semibold' : 'text-gray-500 hover:text-gray-700'}`}
             >
               {tab.label}
             </button>
@@ -506,8 +506,8 @@ export default function LostAndFoundPage() {
                       >
                         {step.stepNumber}
                       </button>
-                      <p className="mt-2 text-xs font-medium text-gray-700 dark:text-gray-300">{step.stepTitle}</p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400">{step.stepDescription}</p>
+                      <p className="mt-2 text-xs font-medium text-gray-700">{step.stepTitle}</p>
+                      <p className="text-[10px] text-gray-500">{step.stepDescription}</p>
                       {index < STEPS.length - 1 ? (
                         <div className={`h-0.5 mt-2 ${formStep > step.stepNumber ? 'bg-purple-600' : 'bg-gray-200'}`} />
                       ) : null}
@@ -516,44 +516,44 @@ export default function LostAndFoundPage() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm transition-opacity duration-200 opacity-100">
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm transition-opacity duration-200 opacity-100">
                 {formStep === 1 ? (
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Tell us about your lost item</h2>
-                    <label className="block mt-4 text-sm font-medium text-gray-700 dark:text-gray-200">What did you lose? *</label>
+                    <h2 className="text-lg font-semibold text-gray-900">Tell us about your lost item</h2>
+                    <label className="block mt-4 text-sm font-medium text-gray-700">What did you lose? *</label>
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mt-2">
                       {(Object.keys(CATEGORY_CONFIG) as ItemCategory[]).map(category => (
                         <button
                           type="button"
                           key={category}
                           onClick={() => setField('itemCategory', category)}
-                          className={`rounded-xl p-3 text-center border-2 ${formData.itemCategory === category ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/30' : 'border-transparent bg-gray-50 dark:bg-gray-800 hover:border-purple-300'}`}
+                          className={`rounded-xl p-3 text-center border-2 ${formData.itemCategory === category ? 'border-purple-600 bg-purple-50 text-purple-700' : 'border-gray-200 bg-gray-50 hover:border-purple-400 hover:bg-purple-50'}`}
                         >
                           <div className="text-2xl">{CATEGORY_CONFIG[category].emoji}</div>
-                          <p className="text-xs font-medium mt-1 text-gray-700 dark:text-gray-200">{CATEGORY_CONFIG[category].label}</p>
+                          <p className="text-xs font-medium mt-1 text-gray-700">{CATEGORY_CONFIG[category].label}</p>
                         </button>
                       ))}
                     </div>
                     {errors.itemCategory ? <p className="text-sm text-red-600 mt-1">{errors.itemCategory}</p> : null}
 
-                    <label className="block mt-4 text-sm font-medium text-gray-700 dark:text-gray-200">Describe your item in detail *</label>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Include brand, model, color, any unique features (min. 20 characters)</p>
+                    <label className="block mt-4 text-sm font-medium text-gray-700">Describe your item in detail *</label>
+                    <p className="text-sm text-gray-500">Include brand, model, color, any unique features (min. 20 characters)</p>
                     <textarea
                       value={formData.itemDescription}
                       onChange={event => setField('itemDescription', event.target.value)}
                       rows={4}
                       maxLength={500}
                       placeholder="e.g. Black iPhone 14 Pro with purple case cover, has a small crack on top-right corner of the screen. Wallpaper shows a red sunset."
-                      className="mt-2 w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900 text-sm"
+                      className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
                     />
-                    <p className="text-xs text-right text-gray-500 dark:text-gray-400">{formData.itemDescription.length}/500</p>
+                    <p className="text-xs text-right text-gray-500">{formData.itemDescription.length}/500</p>
                     {errors.itemDescription ? <p className="text-sm text-red-600 mt-1">{errors.itemDescription}</p> : null}
 
-                    <label className="block mt-3 text-sm font-medium text-gray-700 dark:text-gray-200">Brand (optional)</label>
+                    <label className="block mt-3 text-sm font-medium text-gray-700">Brand (optional)</label>
                     <input
                       value={formData.itemBrand}
                       onChange={event => setField('itemBrand', event.target.value)}
-                      className="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900 text-sm"
+                      className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
                     />
                     {formData.itemCategory && CATEGORY_CONFIG[formData.itemCategory]?.commonBrands?.length ? (
                       <div className="mt-2 flex flex-wrap gap-1">
@@ -562,7 +562,7 @@ export default function LostAndFoundPage() {
                             key={brand}
                             type="button"
                             onClick={() => setField('itemBrand', brand)}
-                            className="text-xs px-2 py-1 rounded-full border border-gray-300 dark:border-gray-600"
+                            className="text-xs px-2 py-1 rounded-full border border-gray-300"
                           >
                             {brand}
                           </button>
@@ -571,7 +571,7 @@ export default function LostAndFoundPage() {
                     ) : null}
 
                     <div className="mt-4">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Primary Color *</label>
+                      <label className="text-sm font-medium text-gray-700">Primary Color *</label>
                       <div className="mt-2 grid grid-cols-8 gap-2">
                         {COLOR_OPTIONS.map(color => (
                           <button
@@ -588,7 +588,7 @@ export default function LostAndFoundPage() {
                     </div>
 
                     <div className="mt-3">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Secondary Color (optional)</label>
+                      <label className="text-sm font-medium text-gray-700">Secondary Color (optional)</label>
                       <div className="mt-2 flex items-center flex-wrap gap-2">
                         <button
                           type="button"
@@ -610,21 +610,21 @@ export default function LostAndFoundPage() {
                     </div>
 
                     <div className="mt-3">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Approximate value (optional)</label>
-                      <div className="mt-1 flex items-center rounded-xl border border-gray-300 dark:border-gray-700 px-3">
+                      <label className="text-sm font-medium text-gray-700">Approximate value (optional)</label>
+                      <div className="mt-1 flex items-center rounded-xl border border-gray-300 px-3 bg-white">
                         <span className="text-sm text-gray-500">₹</span>
                         <input
                           value={formData.estimatedValue}
                           onChange={event => setField('estimatedValue', event.target.value)}
                           placeholder="e.g. 15000"
                           inputMode="numeric"
-                          className="w-full px-2 py-2 bg-transparent text-sm outline-none"
+                          className="w-full px-2 py-2 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-purple-500 focus:ring-purple-500"
                         />
                       </div>
                     </div>
 
                     <div className="mt-3">
-                      <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                      <label className="inline-flex items-center gap-2 text-sm text-gray-700">
                         <input
                           type="checkbox"
                           checked={formData.hasDistinguishingFeatures}
@@ -642,7 +642,7 @@ export default function LostAndFoundPage() {
                             onChange={event => setField('distinguishingFeatures', event.target.value)}
                             rows={3}
                             placeholder="e.g. Has my name engraved on back, scratch near corner, logo sticker"
-                            className="w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900 text-sm"
+                            className="w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
                           />
                           {errors.distinguishingFeatures ? <p className="text-sm text-red-600 mt-1">{errors.distinguishingFeatures}</p> : null}
                         </div>
@@ -663,27 +663,27 @@ export default function LostAndFoundPage() {
 
                 {formStep === 2 ? (
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">When and where did you lose it?</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">When and where did you lose it?</h2>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Date of Loss *</label>
+                        <label className="block text-sm font-medium text-gray-700">Date of Loss *</label>
                         <input
                           type="date"
                           max={today}
                           value={formData.dateOfLoss}
                           onChange={event => setField('dateOfLoss', event.target.value)}
-                          className="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900 text-sm"
+                          className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm text-gray-900 focus:border-purple-500 focus:ring-purple-500"
                         />
                         {errors.dateOfLoss ? <p className="text-xs text-red-600 mt-1">{errors.dateOfLoss}</p> : null}
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Approximate Time of Loss *</label>
+                        <label className="block text-sm font-medium text-gray-700">Approximate Time of Loss *</label>
                         <input
                           type="time"
                           value={formData.approximateTimeOfLoss}
                           onChange={event => setField('approximateTimeOfLoss', event.target.value)}
-                          className="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900 text-sm"
+                          className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm text-gray-900 focus:border-purple-500 focus:ring-purple-500"
                         />
                         {errors.approximateTimeOfLoss ? <p className="text-xs text-red-600 mt-1">{errors.approximateTimeOfLoss}</p> : null}
                       </div>
@@ -709,14 +709,14 @@ export default function LostAndFoundPage() {
                     </div>
 
                     <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Where exactly did you lose it? *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Where exactly did you lose it? *</label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {(Object.entries(LOST_LOCATION_LABELS) as Array<[LostLocation, string]>).map(([value, label]) => (
                           <button
                             type="button"
                             key={value}
                             onClick={() => setField('lostLocation', value)}
-                            className={`rounded-xl border px-3 py-2 text-left text-sm ${formData.lostLocation === value ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/30' : 'border-gray-300 dark:border-gray-700'}`}
+                            className={`rounded-xl border px-3 py-2 text-left text-sm ${formData.lostLocation === value ? 'border-purple-600 bg-purple-50 text-purple-700' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}`}
                           >
                             {label}
                           </button>
@@ -728,15 +728,15 @@ export default function LostAndFoundPage() {
                     {formData.lostLocation === 'INSIDE_TRAIN' ? (
                       <>
                         <div className="mt-4">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Which coach were you in? (optional)</label>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Coaches are numbered 1-6 from the front</p>
+                          <label className="block text-sm font-medium text-gray-700">Which coach were you in? (optional)</label>
+                          <p className="text-sm text-gray-500">Coaches are numbered 1-6 from the front</p>
                           <div className="mt-2 grid grid-cols-7 gap-2 max-w-xs sm:max-w-sm">
                             {COACH_OPTIONS.map(option => (
                               <button
                                 key={option.value}
                                 type="button"
                                 onClick={() => setField('coachPosition', option.value)}
-                                className={`h-10 rounded-lg border text-sm font-semibold ${formData.coachPosition === option.value ? 'border-purple-600 bg-purple-600 text-white' : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200'}`}
+                                className={`h-10 rounded-lg border text-sm font-semibold ${formData.coachPosition === option.value ? 'border-purple-600 bg-purple-600 text-white' : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'}`}
                               >
                                 {option.label}
                               </button>
@@ -746,14 +746,14 @@ export default function LostAndFoundPage() {
                         </div>
 
                         <div className="mt-4">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Direction of travel (optional)</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Direction of travel (optional)</label>
                           <div className="flex flex-wrap gap-2">
                             {DIRECTION_OPTIONS.map(option => (
                               <button
                                 key={option.value}
                                 type="button"
                                 onClick={() => setField('trainDirection', option.value)}
-                                className={`rounded-full px-3 py-1.5 text-xs border ${formData.trainDirection === option.value ? 'bg-purple-600 border-purple-600 text-white' : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200'}`}
+                                className={`rounded-full px-3 py-1.5 text-xs border ${formData.trainDirection === option.value ? 'bg-purple-600 border-purple-600 text-white' : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}`}
                               >
                                 {option.label}
                               </button>
@@ -780,24 +780,24 @@ export default function LostAndFoundPage() {
 
                 {formStep === 3 ? (
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">How can we contact you?</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Your details are kept confidential and used only for Lost & Found notifications.</p>
+                    <h2 className="text-lg font-semibold text-gray-900">How can we contact you?</h2>
+                    <p className="text-sm text-gray-500">Your details are kept confidential and used only for Lost & Found notifications.</p>
 
                     <div className="mt-4 space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Full Name *</label>
+                        <label className="block text-sm font-medium text-gray-700">Full Name *</label>
                         <input
                           value={formData.reporterName}
                           onChange={event => setField('reporterName', event.target.value)}
                           placeholder="e.g. Priya Sharma"
-                          className="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900 text-sm"
+                          className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
                         />
                         {errors.reporterName ? <p className="text-xs text-red-600 mt-1">{errors.reporterName}</p> : null}
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Phone Number *</label>
-                        <div className="mt-1 flex items-center rounded-xl border border-gray-300 dark:border-gray-700 px-3 bg-white dark:bg-gray-900">
+                        <label className="block text-sm font-medium text-gray-700">Phone Number *</label>
+                        <div className="mt-1 flex items-center rounded-xl border border-gray-300 px-3 bg-white">
                           <span className="text-sm text-gray-500">+91</span>
                           <input
                             value={formData.reporterPhone}
@@ -805,25 +805,25 @@ export default function LostAndFoundPage() {
                             maxLength={10}
                             inputMode="numeric"
                             placeholder="10-digit mobile number"
-                            className="w-full px-2 py-2 bg-transparent text-sm outline-none"
+                            className="w-full px-2 py-2 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-purple-500 focus:ring-purple-500"
                           />
                         </div>
                         {errors.reporterPhone ? <p className="text-xs text-red-600 mt-1">{errors.reporterPhone}</p> : null}
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Email Address (optional)</label>
+                        <label className="block text-sm font-medium text-gray-700">Email Address (optional)</label>
                         <input
                           value={formData.reporterEmail}
                           onChange={event => setField('reporterEmail', event.target.value)}
                           placeholder="yourname@email.com"
-                          className="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900 text-sm"
+                          className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 bg-white text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
                         />
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">We'll send report updates to this email</p>
+                        <p className="text-sm text-gray-500 mt-1">We'll send report updates to this email</p>
                         {errors.reporterEmail ? <p className="text-xs text-red-600 mt-1">{errors.reporterEmail}</p> : null}
                       </div>
 
-                      <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-3 text-xs text-blue-700 dark:text-blue-300">
+                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-sm text-blue-700">
                         🔒 Your contact details are stored securely and only used to notify you when a matching item is found. BMRCL does not share your information with third parties.
                       </div>
                     </div>
@@ -845,17 +845,17 @@ export default function LostAndFoundPage() {
 
                 {formStep === 4 ? (
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Review your report</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Please verify all details before submitting</p>
+                    <h2 className="text-lg font-semibold text-gray-900">Review your report</h2>
+                    <p className="text-sm text-gray-500">Please verify all details before submitting</p>
 
-                    <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+                    <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-4">
                       <div>
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-gray-800 dark:text-gray-100">Item Details</h3>
+                          <h3 className="font-semibold text-gray-700">Item Details</h3>
                           <button type="button" onClick={() => setFormStep(1)} className="text-xs text-purple-600">Edit ✎</button>
                         </div>
                         <p className="text-sm mt-1">{formData.itemCategory ? getCategoryEmoji(formData.itemCategory as ItemCategory) : '📦'} {formData.itemCategory ? getCategoryLabel(formData.itemCategory as ItemCategory) : ''}</p>
-                        <p className="text-sm italic text-gray-700 dark:text-gray-200">{formData.itemDescription}</p>
+                        <p className="text-sm italic text-gray-900">{formData.itemDescription}</p>
                         <p className="text-xs text-gray-500 mt-1">Color: {formData.primaryColor}{formData.secondaryColor ? ` + ${formData.secondaryColor}` : ''}</p>
                         {formData.estimatedValue ? <p className="text-xs text-gray-500">Value: ₹{formData.estimatedValue}</p> : null}
                         {formData.itemBrand ? <p className="text-xs text-gray-500">Brand: {formData.itemBrand}</p> : null}
@@ -864,7 +864,7 @@ export default function LostAndFoundPage() {
 
                       <div>
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-gray-800 dark:text-gray-100">Journey Details</h3>
+                          <h3 className="font-semibold text-gray-700">Journey Details</h3>
                           <button type="button" onClick={() => setFormStep(2)} className="text-xs text-purple-600">Edit ✎</button>
                         </div>
                         <p className="text-xs text-gray-500">📅 Date: {formData.dateOfLoss}</p>
@@ -878,7 +878,7 @@ export default function LostAndFoundPage() {
 
                       <div>
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-gray-800 dark:text-gray-100">Contact</h3>
+                          <h3 className="font-semibold text-gray-700">Contact</h3>
                           <button type="button" onClick={() => setFormStep(3)} className="text-xs text-purple-600">Edit ✎</button>
                         </div>
                         <p className="text-xs text-gray-500">👤 {formData.reporterName}</p>
@@ -887,7 +887,7 @@ export default function LostAndFoundPage() {
                       </div>
                     </div>
 
-                    <label className="mt-4 inline-flex items-start gap-2 text-sm text-gray-700 dark:text-gray-200">
+                    <label className="mt-4 inline-flex items-start gap-2 text-sm text-gray-700">
                       <input
                         type="checkbox"
                         checked={acceptTerms}
@@ -915,13 +915,13 @@ export default function LostAndFoundPage() {
               </div>
             </div>
           ) : (
-            <div className="mt-6 bg-green-50 dark:bg-green-950/30 rounded-2xl p-8 text-center">
+            <div className="mt-6 bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
               <div className="text-5xl">✅</div>
               <h2 className="text-2xl font-bold text-green-700 mt-2">Report Submitted Successfully!</h2>
 
               <div className="mt-5">
-                <p className="text-sm text-gray-600 dark:text-gray-300">Your Reference Number</p>
-                <div className="mt-2 mx-auto max-w-md bg-white dark:bg-gray-900 rounded-xl border-2 border-green-400 p-4 text-center text-2xl font-bold tracking-widest font-mono">
+                <p className="text-sm text-gray-600">Your Reference Number</p>
+                <div className="mt-2 mx-auto max-w-md bg-white rounded-xl border-2 border-green-400 p-4 text-center text-2xl text-gray-900 font-bold tracking-widest font-mono">
                   {submittedReport?.referenceNumber}
                 </div>
                 <button
@@ -935,8 +935,8 @@ export default function LostAndFoundPage() {
               </div>
 
               <div className="mt-6 text-left max-w-xl mx-auto">
-                <h3 className="font-semibold text-gray-800 dark:text-gray-100">What happens next</h3>
-                <ol className="list-decimal pl-5 text-sm text-gray-700 dark:text-gray-200 mt-2 space-y-1">
+                <h3 className="font-semibold text-gray-700">What happens next</h3>
+                <ol className="list-decimal pl-5 text-sm text-gray-700 mt-2 space-y-1">
                   <li>Our team reviews your report within 2 hours</li>
                   <li>We check our found items database for matches</li>
                   <li>You'll be notified via SMS/call if a match is found</li>
@@ -945,28 +945,28 @@ export default function LostAndFoundPage() {
               </div>
 
               {matches.length > 0 ? (
-                <div className="mt-6 bg-amber-50 dark:bg-amber-950/30 border border-amber-300 rounded-2xl p-4 text-left">
-                  <h3 className="font-semibold text-amber-800 dark:text-amber-200">🎯 {matches.length} Potential Match(es) Found!</h3>
-                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">These items in our database may be yours</p>
+                <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left">
+                  <h3 className="font-semibold text-amber-800">🎯 {matches.length} Potential Match(es) Found!</h3>
+                  <p className="text-xs text-gray-700 mt-1">These items in our database may be yours</p>
                   <div className="mt-3 space-y-3">
                     {matches.slice(0, 3).map(match => {
                       const item = MOCK_FOUND_ITEMS.find(found => found.id === match.foundReportId);
                       if (!item) return null;
 
                       return (
-                        <div key={match.foundReportId} className={`bg-white dark:bg-gray-900 rounded-xl p-3 border-l-4 ${match.matchConfidence === 'HIGH' ? 'border-green-500' : match.matchConfidence === 'MEDIUM' ? 'border-amber-500' : 'border-gray-400'}`}>
+                        <div key={match.foundReportId} className={`bg-white rounded-xl p-3 border border-gray-200 border-l-4 ${match.matchConfidence === 'HIGH' ? 'border-green-500' : match.matchConfidence === 'MEDIUM' ? 'border-amber-500' : 'border-gray-400'}`}>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800">{match.matchScore}% match</span>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800">{match.matchConfidence}</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100">{match.matchScore}% match</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100">{match.matchConfidence}</span>
                           </div>
-                          <p className="text-sm mt-2 text-gray-800 dark:text-gray-100">{item.itemDescription.slice(0, 100)}</p>
+                          <p className="text-sm mt-2 text-gray-800">{item.itemDescription.slice(0, 100)}</p>
                           <p className="text-xs text-gray-500 mt-1">📍 {item.foundAtStation} · 📅 {item.foundDate}</p>
                           <div className="mt-2 flex flex-wrap gap-1">
                             {match.matchReasons.map(reason => (
-                              <span key={reason} className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800">{reason}</span>
+                              <span key={reason} className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100">{reason}</span>
                             ))}
                           </div>
-                          <div className="mt-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-xs">
+                          <div className="mt-2 p-2 rounded-lg bg-gray-50 border-t border-gray-100 text-xs text-gray-700">
                             📞 {match.contactInfo}
                             <br />
                             📍 {item.currentStorageLocation}
@@ -974,7 +974,7 @@ export default function LostAndFoundPage() {
                             Bring your reference number + photo ID
                           </div>
                           {match.matchConfidence === 'HIGH' ? (
-                            <p className="mt-2 text-xs text-green-700 dark:text-green-300">🎉 This looks like a very strong match!</p>
+                            <p className="mt-2 text-xs bg-green-50 border border-green-200 text-green-700 rounded-md px-2 py-1">🎉 This looks like a very strong match!</p>
                           ) : null}
                         </div>
                       );
@@ -983,7 +983,7 @@ export default function LostAndFoundPage() {
                   <button type="button" onClick={() => setActiveTab('SEARCH')} className="mt-3 text-sm text-purple-600 underline">View all found items →</button>
                 </div>
               ) : (
-                <div className="mt-6 text-sm text-gray-600 dark:text-gray-300">
+                <div className="mt-6 text-sm text-gray-600">
                   No exact matches in our current database.
                   <br />
                   We'll continue checking as new items are turned in. You'll be notified if a match appears.
@@ -991,8 +991,8 @@ export default function LostAndFoundPage() {
               )}
 
               <div className="mt-6 flex flex-wrap justify-center gap-2">
-                <button type="button" onClick={() => setActiveTab('MY_REPORTS')} className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800">📋 View My Reports</button>
-                <button type="button" onClick={() => setActiveTab('SEARCH')} className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800">🔍 Search Found Items</button>
+                <button type="button" onClick={() => setActiveTab('MY_REPORTS')} className="px-4 py-2 rounded-xl bg-gray-100">📋 View My Reports</button>
+                <button type="button" onClick={() => setActiveTab('SEARCH')} className="px-4 py-2 rounded-xl bg-gray-100">🔍 Search Found Items</button>
                 <button type="button" onClick={resetForm} className="px-4 py-2 rounded-xl bg-purple-600 text-white">Report Another Lost Item</button>
               </div>
             </div>
@@ -1001,22 +1001,22 @@ export default function LostAndFoundPage() {
 
         {activeTab === 'SEARCH' ? (
           <div className="mt-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Search Our Found Items Database</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{MOCK_FOUND_ITEMS.length} items currently in custody across Namma Metro stations</p>
+            <h2 className="text-xl font-semibold text-gray-900">Search Our Found Items Database</h2>
+            <p className="text-sm text-gray-500">{MOCK_FOUND_ITEMS.length} items currently in custody across Namma Metro stations</p>
 
-            <div className="mt-4 bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm">
+            <div className="mt-4 bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
               <input
                 value={searchFilters.keyword}
                 onChange={event => setSearchFilters(prev => ({ ...prev, keyword: event.target.value }))}
                 placeholder="Describe the item — e.g. black phone, blue bag, Honda keys"
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
               />
 
-              <div className="mt-3 flex gap-2 overflow-x-auto">
+              <div className="mt-3 flex gap-2 overflow-x-auto bg-gray-50 rounded-xl p-2">
                 <select
                   value={searchFilters.category}
                   onChange={event => setSearchFilters(prev => ({ ...prev, category: event.target.value as ItemCategory | '' }))}
-                  className="rounded-lg border border-gray-300 dark:border-gray-700 px-2 py-1 text-xs bg-white dark:bg-gray-900"
+                  className="rounded-lg border border-gray-300 px-2 py-1 text-xs bg-white text-gray-900 focus:border-purple-500 focus:ring-purple-500"
                 >
                   <option value="">All Categories</option>
                   {(Object.keys(CATEGORY_CONFIG) as ItemCategory[]).map(category => (
@@ -1028,14 +1028,14 @@ export default function LostAndFoundPage() {
                   value={searchFilters.station}
                   onChange={event => setSearchFilters(prev => ({ ...prev, station: event.target.value }))}
                   placeholder="Station"
-                  className="rounded-lg border border-gray-300 dark:border-gray-700 px-2 py-1 text-xs"
+                  className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
                 />
 
                 <input
                   type="date"
                   value={searchFilters.dateFrom}
                   onChange={event => setSearchFilters(prev => ({ ...prev, dateFrom: event.target.value }))}
-                  className="rounded-lg border border-gray-300 dark:border-gray-700 px-2 py-1 text-xs"
+                  className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 focus:border-purple-500 focus:ring-purple-500"
                 />
               </div>
 
@@ -1069,7 +1069,7 @@ export default function LostAndFoundPage() {
                 </button>
               ) : null}
 
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{isSearching ? 'Searching...' : `${searchResults.length} items found`}</p>
+              <p className="mt-2 text-sm text-gray-600">{isSearching ? 'Searching...' : `${searchResults.length} items found`}</p>
             </div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1078,7 +1078,7 @@ export default function LostAndFoundPage() {
                 const daysRemaining = Math.ceil((new Date(item.claimDeadline).getTime() - Date.now()) / 86400000);
 
                 return (
-                  <div key={item.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 hover:shadow-md transition-all">
+                  <div key={item.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md hover:border-gray-300 transition-all">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold">{getCategoryEmoji(item.itemCategory)} {getCategoryLabel(item.itemCategory)}</p>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${item.status === 'UNCLAIMED' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
@@ -1086,21 +1086,21 @@ export default function LostAndFoundPage() {
                       </span>
                     </div>
 
-                    <p className="text-sm text-gray-700 dark:text-gray-200 mt-2">{item.itemDescription.slice(0, 120)}{item.itemDescription.length > 120 ? '...' : ''}</p>
+                    <p className="text-sm text-gray-800 mt-2">{item.itemDescription.slice(0, 120)}{item.itemDescription.length > 120 ? '...' : ''}</p>
 
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-gray-500">
                       <p>📍 Found at: {item.foundAtStation}</p>
                       <p>📅 Found on: {item.foundDate}</p>
                       <p>🔍 Location: {LOST_LOCATION_LABELS[item.foundLocation]}</p>
                       {item.coachNumber ? <p>🚃 Coach: {item.coachNumber}</p> : <p />}
                     </div>
 
-                    <p className={`mt-2 text-xs ${daysRemaining <= 7 ? 'text-red-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <p className={`mt-2 text-xs ${daysRemaining <= 7 ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
                       {daysRemaining <= 7 ? `⚠️ Claim by ${item.claimDeadline}` : `Claim by ${item.claimDeadline}`}
                     </p>
 
                     {isExpanded ? (
-                      <div className="mt-2 text-xs text-gray-700 dark:text-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800 p-2">
+                      <div className="mt-2 text-xs text-gray-700 rounded-lg bg-gray-50 border-t border-gray-100 p-2">
                         🏢 {item.currentStorageLocation}
                         <br />
                         📞 {item.storageContactNumber}
@@ -1122,7 +1122,7 @@ export default function LostAndFoundPage() {
             </div>
 
             {searchResults.length === 0 ? (
-              <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+              <div className="mt-6 text-center text-sm text-gray-500">
                 No items match your search.
                 <br />
                 Try broader keywords, remove color, or clear date filter.
@@ -1134,10 +1134,10 @@ export default function LostAndFoundPage() {
         {activeTab === 'MY_REPORTS' ? (
           <div className="mt-6">
             {myReports.length === 0 ? (
-              <div className="text-center bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm">
+              <div className="text-center bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
                 <p className="text-4xl">📝</p>
-                <h2 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">No reports yet</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Report a lost item to get started</p>
+                <h2 className="mt-2 text-lg font-semibold text-gray-900">No reports yet</h2>
+                <p className="text-sm text-gray-500">Report a lost item to get started</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -1162,8 +1162,10 @@ export default function LostAndFoundPage() {
                         : report.status === 'READY_FOR_COLLECTION'
                           ? 'bg-green-100 text-green-700 animate-pulse'
                           : report.status === 'EXPIRED'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-gray-100 text-gray-700';
+                            ? 'bg-red-100 text-red-600'
+                            : report.status === 'COLLECTED'
+                              ? 'bg-gray-100 text-gray-600'
+                              : 'bg-gray-100 text-gray-500';
 
                   const statusText = report.status === 'SUBMITTED'
                     ? '📤 Submitted'
@@ -1180,22 +1182,22 @@ export default function LostAndFoundPage() {
                               : 'Closed';
 
                   return (
-                    <div key={report.id} className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800">
-                      <p className="font-mono text-sm font-bold text-purple-700 dark:text-purple-300">{report.referenceNumber}</p>
-                      <p className="text-sm mt-1 text-gray-800 dark:text-gray-100">{getCategoryEmoji(report.itemCategory)} {report.itemCategoryLabel} — {report.itemDescription.slice(0, 60)}{report.itemDescription.length > 60 ? '...' : ''}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Journey: {report.boardingStation} → {report.destinationStation}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Date of loss: {report.dateOfLoss}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Submitted: {new Date(report.submittedAt).toLocaleString('en-IN')}</p>
+                    <div key={report.id} className="bg-white rounded-2xl p-4 border border-gray-200">
+                      <p className="font-mono text-sm font-bold text-gray-900">{report.referenceNumber}</p>
+                      <p className="text-sm mt-1 text-gray-700">{getCategoryEmoji(report.itemCategory)} {report.itemCategoryLabel} — {report.itemDescription.slice(0, 60)}{report.itemDescription.length > 60 ? '...' : ''}</p>
+                      <p className="text-xs text-gray-500 mt-1">Journey: {report.boardingStation} → {report.destinationStation}</p>
+                      <p className="text-xs text-gray-500">Date of loss: {report.dateOfLoss}</p>
+                      <p className="text-xs text-gray-500">Submitted: {new Date(report.submittedAt).toLocaleString('en-IN')}</p>
                       <span className={`inline-flex mt-2 text-xs px-2 py-0.5 rounded-full ${statusTone}`}>{statusText}</span>
 
                       {report.status === 'MATCHED' ? (
-                        <div className="mt-2 bg-green-50 dark:bg-green-950/30 rounded-lg p-2 text-xs text-green-700 dark:text-green-300">
+                        <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-2 text-xs text-green-700">
                           🎉 A match may have been found! Contact station office with your reference number.
                         </div>
                       ) : null}
 
                       {report.status === 'READY_FOR_COLLECTION' ? (
-                        <div className="mt-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2 text-xs text-blue-700 dark:text-blue-300">
+                        <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-2 text-xs text-blue-700">
                           📦 Ready for collection. Visit assigned station with photo ID before deadline.
                         </div>
                       ) : null}
