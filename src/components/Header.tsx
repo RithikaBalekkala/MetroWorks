@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslation, LANGUAGE_OPTIONS, type Language } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
-import { useNotifications } from '@/lib/notification-service';
+import { getUnreadRushAlertCount, useNotifications } from '@/lib/notification-service';
 import { Bell, ChevronDown, Menu, X, User, LogOut } from 'lucide-react';
 
 export default function Header() {
@@ -16,6 +16,7 @@ export default function Header() {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [unreadRushCount, setUnreadRushCount] = useState(0);
   
   const langRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
@@ -32,6 +33,20 @@ export default function Header() {
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const updateCount = () => {
+      try {
+        setUnreadRushCount(getUnreadRushAlertCount());
+      } catch {
+        setUnreadRushCount(0);
+      }
+    };
+
+    updateCount();
+    const id = setInterval(updateCount, 30000);
+    return () => clearInterval(id);
   }, []);
 
   const currentLang = LANGUAGE_OPTIONS.find(l => l.code === language);
@@ -78,8 +93,15 @@ export default function Header() {
                 <Link href="/booking" className="text-black hover:text-[#00A550] font-medium transition">
                   {t('nav.booking')}
                 </Link>
-                <Link href="/tickets?lostFound=1" className="text-black hover:text-[#d97706] font-medium transition">
-                  Lost and Found
+                <Link href="/rush-management" className="text-black hover:text-[#7B2D8B] font-medium transition">
+                  <span className="flex items-center gap-1">
+                    📡 Rush Status
+                    {unreadRushCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center animate-pulse">
+                        {unreadRushCount > 9 ? '9+' : unreadRushCount}
+                      </span>
+                    )}
+                  </span>
                 </Link>
               </>
             )}
@@ -250,18 +272,25 @@ export default function Header() {
                     {t('nav.booking')}
                   </Link>
                   <Link
+                    href="/rush-management"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
+                  >
+                    <span className="flex items-center gap-1">
+                      📡 Rush Status
+                      {unreadRushCount > 0 && (
+                        <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center animate-pulse">
+                          {unreadRushCount > 9 ? '9+' : unreadRushCount}
+                        </span>
+                      )}
+                    </span>
+                  </Link>
+                  <Link
                     href="/tickets"
                     onClick={() => setMobileMenuOpen(false)}
                     className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
                   >
                     {t('nav.tickets')}
-                  </Link>
-                  <Link
-                    href="/tickets?lostFound=1"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-2 text-black hover:bg-[#fff7ed] rounded-lg"
-                  >
-                    Lost and Found
                   </Link>
                   <Link
                     href="/wallet"

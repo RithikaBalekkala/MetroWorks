@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import type { CrowdLevel, ManagementRushAlert } from '@/lib/rush-types';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Types
@@ -25,6 +26,7 @@ export interface Notification {
 // Storage Keys
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const NOTIFICATIONS_KEY = 'bmrcl_notifications';
+const RUSH_ALERTS_KEY = 'bmrcl_rush_alerts';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Sample Notification Templates
@@ -130,6 +132,142 @@ function saveNotifications(notifications: Notification[]): void {
   } catch (error) {
     console.error('Failed to save notifications:', error);
   }
+}
+
+function getSuggestedActions(rushPercent: number, stationName: string): string[] {
+  if (rushPercent >= 95) {
+    return [
+      `Halt entry at all gates at ${stationName} immediately`,
+      'Deploy RPF and crowd control personnel to platform',
+      'Broadcast alternate station announcement on PA system',
+      'Coordinate with police for crowd management',
+      'Notify adjacent stations to prepare for overflow',
+    ];
+  }
+
+  if (rushPercent >= 90) {
+    return [
+      `Deploy all available staff to ${stationName} concourse`,
+      'Open all entry and exit gates to maximum width',
+      'Broadcast expected wait times on station PA',
+      'Alert feeder bus operators for rerouting',
+      'Monitor situation every 2 minutes',
+    ];
+  }
+
+  return [
+    `Send 2 additional staff to ${stationName} entry`,
+    'Open secondary concourse if available',
+    'Monitor crowd trend - prepare escalation plan',
+  ];
+}
+
+function normalizeCrowdLevel(value: string): CrowdLevel {
+  if (value === 'CRITICAL' || value === 'HEAVY' || value === 'MODERATE' || value === 'LIGHT') {
+    return value;
+  }
+  return 'MODERATE';
+}
+
+function appendToBellNotifications(title: string, message: string): void {
+  if (typeof localStorage === 'undefined') return;
+
+  try {
+    const existing = loadNotifications();
+    const notif: Notification = {
+      id: generateNotificationId(),
+      type: 'delay',
+      title,
+      message,
+      read: false,
+      timestamp: new Date().toISOString(),
+    };
+    saveNotifications([notif, ...existing]);
+  } catch {
+    // Keep rush alert flow non-blocking.
+  }
+}
+
+export function triggerRushManagementAlert(data: {
+  stationId: string;
+  stationName: string;
+  rushPercent: number;
+  crowdLevel: string;
+  message: string;
+}): void {
+  const severity: ManagementRushAlert['severity'] = data.rushPercent >= 95
+    ? 'EMERGENCY'
+    : data.rushPercent >= 90
+      ? 'URGENT'
+      : 'WARNING';
+
+  const alert: ManagementRushAlert = {
+    id: `RA-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    stationId: data.stationId,
+    stationName: data.stationName,
+    rushPercent: Math.round(data.rushPercent),
+    crowdLevel: normalizeCrowdLevel(data.crowdLevel),
+    message: data.message,
+    suggestedActions: getSuggestedActions(data.rushPercent, data.stationName),
+    triggeredAt: new Date().toISOString(),
+    isRead: false,
+    severity,
+  };
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const existing = getRushAlerts();
+      const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+      const recentForStation = existing.find(
+        a => a.stationId === data.stationId && new Date(a.triggeredAt).getTime() > fiveMinAgo
+      );
+
+      if (!recentForStation) {
+        const trimmed = [alert, ...existing].slice(0, 50);
+        localStorage.setItem(RUSH_ALERTS_KEY, JSON.stringify(trimmed));
+      }
+    }
+  } catch {
+    // Server-side or restricted environments can skip localStorage.
+  }
+
+  try {
+    appendToBellNotifications(
+      severity === 'EMERGENCY'
+        ? 'EMERGENCY: Immediate Action Required'
+        : severity === 'URGENT'
+          ? 'URGENT: Capacity Breach'
+          : 'WARNING: High Crowd Density',
+      data.message,
+    );
+  } catch {
+    // Keep non-blocking.
+  }
+}
+
+export function getRushAlerts(): ManagementRushAlert[] {
+  try {
+    if (typeof localStorage === 'undefined') return [];
+    const data = localStorage.getItem(RUSH_ALERTS_KEY);
+    return data ? (JSON.parse(data) as ManagementRushAlert[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function markRushAlertRead(alertId: string): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    const alerts = getRushAlerts();
+    const updated = alerts.map(a => (a.id === alertId ? { ...a, isRead: true } : a));
+    localStorage.setItem(RUSH_ALERTS_KEY, JSON.stringify(updated));
+  } catch {
+    // Keep non-blocking.
+  }
+}
+
+export function getUnreadRushAlertCount(): number {
+  return getRushAlerts().filter(a => !a.isRead).length;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

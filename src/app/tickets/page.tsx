@@ -7,9 +7,6 @@ import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
 import AppShell from '@/components/AppShell';
 import { AmenityBadgeGroup } from '@/components/AmenityBadge';
-import ParkingBadge from '@/components/ParkingBadge';
-import ParkingModal from '@/components/ParkingModal';
-import LostAndFoundModal from '@/components/LostAndFoundModal';
 import { useTranslation } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import { useWallet } from '@/lib/wallet-context';
@@ -19,7 +16,6 @@ import {
   analyseModification,
   getAmenityDetails,
   getStationAmenities,
-  getStationParking,
   type AmenityInfo,
 } from '@/lib/metro-network';
 import { getAmenityConfig } from '@/lib/amenity-config';
@@ -198,8 +194,6 @@ interface TicketCardProps {
   onModify: (id: string) => void;
   onMarkScanned: (id: string) => void;
   onDraftRefund: (ticket: Ticket) => void;
-  onOpenParking: (stationName: string) => void;
-  onOpenLostAndFound: (stationName: string) => void;
 }
 
 function formatINR(amount?: number | null): string {
@@ -207,15 +201,7 @@ function formatINR(amount?: number | null): string {
   return safeAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
 }
 
-function TicketCard({
-  ticket,
-  onCancel,
-  onModify,
-  onMarkScanned,
-  onDraftRefund,
-  onOpenParking,
-  onOpenLostAndFound,
-}: TicketCardProps) {
+function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }: TicketCardProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(ticket.status === 'ACTIVE');
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(ticket.expiresAt));
@@ -265,7 +251,6 @@ function TicketCard({
   const [showAmenityDetails, setShowAmenityDetails] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const destinationAmenities = getStationAmenities(ticket.toStation);
-  const destinationParking = getStationParking(ticket.toStation);
   const destinationAmenityDetails = getAmenityDetails(ticket.toStation)
     .slice()
     .sort((a, b) => a.walkMinutes - b.walkMinutes);
@@ -472,31 +457,6 @@ function TicketCard({
                 </>
               )}
 
-              {destinationParking?.available && (
-                <>
-                  <div className="min-h-[52px]">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-sm font-semibold text-gray-700">Parking at {ticket.toStation}</span>
-                      <span className="text-xs text-gray-400">Park and ride availability</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <ParkingBadge stationName={ticket.toStation} size="sm" />
-                      <span className="text-xs text-gray-500">{destinationParking.facilityName}</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => onOpenParking(ticket.toStation)}
-                      className="mt-2 text-xs text-[#008c44] hover:text-[#006b34]"
-                    >
-                      View parking availability and rates
-                    </button>
-                  </div>
-                  <div className="border-t border-dashed border-gray-200 my-3" />
-                </>
-              )}
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs text-gray-500 uppercase">{t('ticket.passengers')}</p>
@@ -554,12 +514,6 @@ function TicketCard({
               >
                 <AlertTriangle className="w-4 h-4" />
                 Draft Refund Email
-              </button>
-              <button
-                onClick={() => onOpenLostAndFound(ticket.toStation)}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition text-sm font-medium"
-              >
-                Lost and Found
               </button>
               <button
                 onClick={() => onModify(ticket.id)}
@@ -639,9 +593,6 @@ export default function TicketsPage() {
   const [modificationLoading, setModificationLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
-  const [showParkingStation, setShowParkingStation] = useState<string | null>(null);
-  const [showLostAndFound, setShowLostAndFound] = useState(false);
-  const [lostAndFoundStation, setLostAndFoundStation] = useState<string | undefined>(undefined);
   const modifyModalRef = useRef<HTMLDivElement | null>(null);
   const ticketCardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -653,11 +604,6 @@ export default function TicketsPage() {
       return;
     }
     setSessionChecked(true);
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('lostFound') === '1') {
-      setShowLostAndFound(true);
-    }
   }, [router]);
 
   const handleCancel = (ticketId: string) => {
@@ -933,11 +879,6 @@ export default function TicketsPage() {
                         onModify={handleModify}
                         onMarkScanned={handleMarkScanned}
                         onDraftRefund={handleDraftRefund}
-                        onOpenParking={(stationName) => setShowParkingStation(stationName)}
-                        onOpenLostAndFound={(stationName) => {
-                          setLostAndFoundStation(stationName);
-                          setShowLostAndFound(true);
-                        }}
                       />
                     </div>
                   ))}
@@ -960,8 +901,6 @@ export default function TicketsPage() {
                         onModify={() => {}}
                         onMarkScanned={() => {}}
                         onDraftRefund={() => {}}
-                        onOpenParking={() => {}}
-                        onOpenLostAndFound={() => {}}
                       />
                     </div>
                   ))}
@@ -1186,21 +1125,6 @@ export default function TicketsPage() {
           {toastMessage}
         </div>
       )}
-
-      <ParkingModal
-        isOpen={Boolean(showParkingStation)}
-        stationName={showParkingStation ?? ''}
-        onClose={() => setShowParkingStation(null)}
-      />
-
-      <LostAndFoundModal
-        isOpen={showLostAndFound}
-        defaultStationName={lostAndFoundStation}
-        onClose={() => {
-          setShowLostAndFound(false);
-          setLostAndFoundStation(undefined);
-        }}
-      />
     </AppShell>
   );
 }

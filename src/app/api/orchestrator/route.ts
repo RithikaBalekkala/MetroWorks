@@ -4,10 +4,7 @@ import { parseJsonSafe } from '@/lib/adk/runner';
 import {
   detectAmenityCategoryFromMessage,
   shouldRouteToPlacesForAmenity,
-  shouldRouteToLostAndFound,
 } from '@/agents/orchestratorAgent';
-import { queryLostAndFoundAssistance } from '@/agents/lostAndFoundAgent';
-import { findNearestParkingStations, getStationParking } from '@/lib/metro-network';
 
 interface OrchestratorRequest {
   intent?: string;
@@ -21,33 +18,7 @@ interface OrchestratorRequest {
 function fallbackEnvelope(body: OrchestratorRequest) {
   const message = body.message ?? '';
   const amenityCategory = detectAmenityCategoryFromMessage(message);
-
-  const inferredIntent = shouldRouteToLostAndFound(message)
-    ? 'lost-and-found'
-    : shouldRouteToPlacesForAmenity(message)
-      ? 'places'
-      : /parking|park and ride|car park|bike park|vehicle parking/.test(message.toLowerCase())
-        ? 'parking'
-        : 'chat';
-  const intent = body.intent ?? inferredIntent;
-
-  const lostAndFoundResult = intent === 'lost-and-found'
-    ? queryLostAndFoundAssistance({
-      userQuery: message,
-      stationName: body.station,
-    })
-    : null;
-
-  const parkingStation = body.station ?? body.to;
-  const parkingResult = intent === 'parking' && parkingStation
-    ? {
-      answerType: 'PARKING',
-      stationName: parkingStation,
-      parking: getStationParking(parkingStation),
-      nearbyStations: findNearestParkingStations(parkingStation, 4),
-      userQuery: message,
-    }
-    : null;
+  const intent = body.intent ?? (shouldRouteToPlacesForAmenity(message) ? 'places' : 'chat');
 
   return {
     agentName: 'orchestrator_agent',
@@ -65,8 +36,6 @@ function fallbackEnvelope(body: OrchestratorRequest) {
       station: body.station,
       timeOfDay: body.timeOfDay ?? 'afternoon',
       amenityCategory,
-      ...(lostAndFoundResult ? lostAndFoundResult : {}),
-      ...(parkingResult ? parkingResult : {}),
     },
   };
 }
@@ -79,20 +48,11 @@ export async function POST(request: Request) {
     body = {};
   }
 
-  const message = body.message ?? '';
-  const detectedAmenityCategory = detectAmenityCategoryFromMessage(message);
-  const resolvedIntent = body.intent ?? (
-    shouldRouteToLostAndFound(message)
-      ? 'lost-and-found'
-      : shouldRouteToPlacesForAmenity(message)
-        ? 'places'
-        : /parking|park and ride|car park|bike park|vehicle parking/.test(message.toLowerCase())
-          ? 'parking'
-          : 'chat'
-  );
+  const resolvedIntent = body.intent ?? (shouldRouteToPlacesForAmenity(body.message ?? '') ? 'places' : 'chat');
+  const detectedAmenityCategory = detectAmenityCategoryFromMessage(body.message ?? '');
 
   const prompt = [
-    'You are orchestrator agent. Choose one specialist route among: chat, refund, places, lost-and-found, parking, crowd, frequency.',
+    'You are orchestrator agent. Choose one specialist route among: chat, refund, places, crowd, frequency.',
     `intent=${resolvedIntent}`,
     `message=${body.message ?? 'No message provided'}`,
     `from=${body.from ?? ''}`,
@@ -100,8 +60,6 @@ export async function POST(request: Request) {
     `station=${body.station ?? ''}`,
     `timeOfDay=${body.timeOfDay ?? 'afternoon'}`,
     `amenityCategory=${detectedAmenityCategory ?? 'none'}`,
-    `lostAndFoundIntent=${shouldRouteToLostAndFound(message) ? 'yes' : 'no'}`,
-    `parkingIntent=${/parking|park and ride|car park|bike park|vehicle parking/.test(message.toLowerCase()) ? 'yes' : 'no'}`,
     'Return strict JSON only.',
   ].join('\n');
 
