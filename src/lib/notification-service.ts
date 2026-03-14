@@ -270,6 +270,28 @@ export function getUnreadRushAlertCount(): number {
   return getRushAlerts().filter(a => !a.isRead).length;
 }
 
+export function notifyLostReportSubmitted(referenceNumber: string, itemCategory: string): void {
+  try {
+    const notificationApi = globalThis as unknown as {
+      addNotification?: (input: {
+        type: 'general';
+        title: string;
+        body: string;
+        read: boolean;
+      }) => void;
+    };
+
+    notificationApi.addNotification?.({
+      type: 'general',
+      title: 'Lost Item Report Submitted',
+      body: `Report ${referenceNumber} for ${itemCategory} has been submitted successfully.`,
+      read: false,
+    });
+  } catch {
+    // Keep lost report submission flow non-blocking.
+  }
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Hook
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -103,6 +103,9 @@ export default function Header() {
                     )}
                   </span>
                 </Link>
+                <Link href="/lost-and-found" className="text-black hover:text-[#7B2D8B] font-medium transition">
+                  Lost &amp; Found
+                </Link>
               </>
             )}
           </nav>
@@ -284,6 +287,13 @@ export default function Header() {
                         </span>
                       )}
                     </span>
+                  </Link>
+                  <Link
+                    href="/lost-and-found"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
+                  >
+                    Lost &amp; Found
                   </Link>
                   <Link
                     href="/tickets"
