@@ -16,10 +16,12 @@ export default function Header() {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [unreadRushCount, setUnreadRushCount] = useState(0);
   
   const langRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -30,9 +32,23 @@ export default function Header() {
       if (userRef.current && !userRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
       }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsMoreMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
   }, []);
 
   useEffect(() => {
@@ -79,12 +95,6 @@ export default function Header() {
             <Link href="/trains" className="text-black hover:text-[#7B2D8B] font-medium transition">
               {t('nav.trains')}
             </Link>
-            <Link href="/edge-gate" className="text-black hover:text-[#00A550] font-medium transition">
-              Edge Gate
-            </Link>
-            <Link href="/xai-dashboard" className="text-black hover:text-[#7B2D8B] font-medium transition">
-              XAI
-            </Link>
             {user && (
               <>
                 <Link href="/dashboard" className="text-black hover:text-[#7B2D8B] font-medium transition">
@@ -92,19 +102,6 @@ export default function Header() {
                 </Link>
                 <Link href="/booking" className="text-black hover:text-[#00A550] font-medium transition">
                   {t('nav.booking')}
-                </Link>
-                <Link href="/rush-management" className="text-black hover:text-[#7B2D8B] font-medium transition">
-                  <span className="flex items-center gap-1">
-                    📡 Rush Status
-                    {unreadRushCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center animate-pulse">
-                        {unreadRushCount > 9 ? '9+' : unreadRushCount}
-                      </span>
-                    )}
-                  </span>
-                </Link>
-                <Link href="/lost-and-found" className="text-black hover:text-[#7B2D8B] font-medium transition">
-                  Lost &amp; Found
                 </Link>
               </>
             )}
@@ -216,6 +213,92 @@ export default function Header() {
               </Link>
             )}
 
+            {/* More menu */}
+            <div ref={moreMenuRef} className="relative">
+              <button
+                onClick={() => setIsMoreMenuOpen(prev => !prev)}
+                aria-label="More navigation options"
+                aria-expanded={isMoreMenuOpen}
+                aria-haspopup="true"
+                className={`rounded-xl px-3 py-2 transition ${
+                  isMoreMenuOpen
+                    ? 'bg-purple-50 border border-purple-300 text-purple-700'
+                    : 'bg-transparent border border-gray-300 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-lg leading-none">⋯</span>
+                <span className="hidden md:inline text-xs ml-1">More</span>
+              </button>
+
+              {isMoreMenuOpen && (
+                <div className="absolute top-full mt-2 z-50 bg-white border border-gray-200 rounded-2xl shadow-xl py-2 min-w-[220px] right-2 md:right-0 max-w-[calc(100vw-16px)] origin-top-right transition-all duration-150 ease-out opacity-100 scale-100">
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">More Options</span>
+                  </div>
+
+                  <Link
+                    href="/edge-gate"
+                    onClick={() => setIsMoreMenuOpen(false)}
+                    className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                  >
+                    <span>🚪</span>
+                    <span>Edge Gate</span>
+                  </Link>
+                  <Link
+                    href="/xai-dashboard"
+                    onClick={() => setIsMoreMenuOpen(false)}
+                    className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-b border-gray-100"
+                  >
+                    <span>🤖</span>
+                    <span>XAI Dashboard</span>
+                  </Link>
+
+                  {user && (
+                    <>
+                      <Link
+                        href="/rush-management"
+                        onClick={() => setIsMoreMenuOpen(false)}
+                        className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      >
+                        <span>📡</span>
+                        <span>Rush Status</span>
+                        {unreadRushCount > 0 && (
+                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                            {unreadRushCount > 9 ? '9+' : unreadRushCount}
+                          </span>
+                        )}
+                      </Link>
+                      <Link
+                        href="/lost-and-found"
+                        onClick={() => setIsMoreMenuOpen(false)}
+                        className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-b border-gray-100"
+                      >
+                        <span>🔍</span>
+                        <span>Lost &amp; Found</span>
+                      </Link>
+
+                      <Link
+                        href="/tickets"
+                        onClick={() => setIsMoreMenuOpen(false)}
+                        className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      >
+                        <span>🎫</span>
+                        <span>{t('nav.tickets')}</span>
+                      </Link>
+                      <Link
+                        href="/wallet"
+                        onClick={() => setIsMoreMenuOpen(false)}
+                        className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                      >
+                        <span>💰</span>
+                        <span>{t('nav.wallet')}</span>
+                      </Link>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -244,20 +327,6 @@ export default function Header() {
               >
                 {t('nav.trains')}
               </Link>
-              <Link
-                href="/edge-gate"
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
-              >
-                Edge Gate
-              </Link>
-              <Link
-                href="/xai-dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
-              >
-                XAI Dashboard
-              </Link>
               {user && (
                 <>
                   <Link
@@ -273,41 +342,6 @@ export default function Header() {
                     className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
                   >
                     {t('nav.booking')}
-                  </Link>
-                  <Link
-                    href="/rush-management"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
-                  >
-                    <span className="flex items-center gap-1">
-                      📡 Rush Status
-                      {unreadRushCount > 0 && (
-                        <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center animate-pulse">
-                          {unreadRushCount > 9 ? '9+' : unreadRushCount}
-                        </span>
-                      )}
-                    </span>
-                  </Link>
-                  <Link
-                    href="/lost-and-found"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
-                  >
-                    Lost &amp; Found
-                  </Link>
-                  <Link
-                    href="/tickets"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
-                  >
-                    {t('nav.tickets')}
-                  </Link>
-                  <Link
-                    href="/wallet"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-2 text-black hover:bg-[#eef5ef] rounded-lg"
-                  >
-                    {t('nav.wallet')}
                   </Link>
                 </>
               )}
