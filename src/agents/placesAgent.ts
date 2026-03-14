@@ -18,6 +18,8 @@ function buildAmenityContext(): string {
     'RAILWAY',
     'BUS_TERMINAL',
     'GOVERNMENT',
+    'BIKE_PARKING',
+    'CAR_PARKING',
   ];
 
   const lines = categories
@@ -82,6 +84,7 @@ const placesInstruction = [
   '- Mention walking distance if available',
   '- Suggest the best station for the user\'s need',
   '- If multiple stations have the same amenity, rank by proximity to user\'s stated origin or destination',
+  '- For parking queries: mention availability count (e.g. 62 car spots available), pricing (₹30/hr), and whether it is currently full or available.',
   '- Always confirm: "You can take the metro to [Station] and walk [X] minutes to reach [Place]"',
   'Example queries you can handle:',
   '- "Which station is nearest to a hospital?"',
@@ -89,6 +92,11 @@ const placesInstruction = [
   '- "I need to visit IISc, which station should I use?"',
   '- "Is there a mall near my destination at MG Road?"',
   '- "Which stations have railway connectivity?"',
+  '- "Which stations have bike parking?"',
+  '- "Is there car parking at Whitefield station?"',
+  '- "Can I park my bike at MG Road metro?"',
+  '- "Which station has the most parking spaces?"',
+  '- "Is parking full at Electronic City today?"',
   'No markdown and no code fences.',
 ].join(' ');
 

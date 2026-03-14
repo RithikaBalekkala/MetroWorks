@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
 import AppShell from '@/components/AppShell';
-import { AmenityBadgeGroup } from '@/components/AmenityBadge';
+import AmenityBadge from '@/components/AmenityBadge';
 import { useTranslation } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import { useWallet } from '@/lib/wallet-context';
@@ -16,6 +16,8 @@ import {
   analyseModification,
   getAmenityDetails,
   getStationAmenities,
+  getStationParking,
+  type AmenityCategory,
   type AmenityInfo,
 } from '@/lib/metro-network';
 import { getAmenityConfig } from '@/lib/amenity-config';
@@ -201,6 +203,51 @@ function formatINR(amount?: number | null): string {
   return safeAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
 }
 
+function ParkingAmenityBadge({
+  category,
+  stationName,
+  size = 'md',
+}: {
+  category: 'BIKE_PARKING' | 'CAR_PARKING';
+  stationName: string;
+  size?: 'xs' | 'sm' | 'md';
+}) {
+  const parking = getStationParking(stationName);
+  if (!parking) {
+    return <AmenityBadge category={category} size={size} showLabel />;
+  }
+
+  const slot = category === 'BIKE_PARKING' ? parking.bike : parking.car;
+  if (!slot) {
+    return <AmenityBadge category={category} size={size} showLabel />;
+  }
+
+  const isFull = slot.available === 0;
+  const baseSizeClass = size === 'xs'
+    ? 'px-1.5 py-0.5 text-xs rounded-md'
+    : size === 'sm'
+      ? 'px-2 py-0.5 text-xs rounded-full'
+      : 'px-3 py-1 text-sm rounded-full';
+
+  return (
+    <div
+      className={`inline-flex items-center gap-1.5 border font-medium ${baseSizeClass} ${
+        isFull
+          ? 'bg-red-50 text-red-600 border-red-200'
+          : category === 'BIKE_PARKING'
+            ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
+            : 'bg-teal-50 text-teal-700 border-teal-200'
+      }`}
+    >
+      <span>{category === 'BIKE_PARKING' ? '🏍️' : '🚗'}</span>
+      <span>{category === 'BIKE_PARKING' ? 'Bike Parking' : 'Car Parking'}</span>
+      <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${isFull ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+        {isFull ? 'FULL' : `${slot.available} free`}
+      </span>
+    </div>
+  );
+}
+
 function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }: TicketCardProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(ticket.status === 'ACTIVE');
@@ -251,6 +298,7 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
   const [showAmenityDetails, setShowAmenityDetails] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const destinationAmenities = getStationAmenities(ticket.toStation);
+  const displayedAmenities: AmenityCategory[] = destinationAmenities;
   const destinationAmenityDetails = getAmenityDetails(ticket.toStation)
     .slice()
     .sort((a, b) => a.walkMinutes - b.walkMinutes);
@@ -402,10 +450,29 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
                       <span className="text-xs text-gray-400">Amenities within walking distance</span>
                     </div>
 
-                    <AmenityBadgeGroup
-                      categories={destinationAmenities}
-                      size="md"
-                    />
+                    <div className="flex flex-wrap gap-2">
+                      {displayedAmenities.map(category => {
+                        if (category === 'BIKE_PARKING' || category === 'CAR_PARKING') {
+                          return (
+                            <ParkingAmenityBadge
+                              key={category}
+                              category={category}
+                              stationName={ticket.toStation}
+                              size="md"
+                            />
+                          );
+                        }
+
+                        return (
+                          <AmenityBadge
+                            key={category}
+                            category={category}
+                            size="md"
+                            showLabel
+                          />
+                        );
+                      })}
+                    </div>
 
                     {destinationAmenityDetails.length > 0 && (
                       <div className="mt-2">

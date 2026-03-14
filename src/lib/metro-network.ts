@@ -17,7 +17,9 @@ export type AmenityCategory =
   | 'RAILWAY'
   | 'BUS_TERMINAL'
   | 'AIRPORT_CONNECT'
-  | 'GOVERNMENT';
+  | 'GOVERNMENT'
+  | 'BIKE_PARKING'
+  | 'CAR_PARKING';
 
 export interface AmenityInfo {
   category: AmenityCategory;
@@ -61,6 +63,20 @@ export interface RouteResult {
 interface StationAmenityPayload {
   amenities: AmenityCategory[];
   amenityDetails: AmenityInfo[];
+}
+
+export interface ParkingSlot {
+  capacity: number;
+  available: number;
+  pricing: string;
+}
+
+export interface StationParking {
+  stationName: string;
+  hasBikeParking: boolean;
+  hasCarParking: boolean;
+  bike: ParkingSlot;
+  car?: ParkingSlot;
 }
 
 const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
@@ -110,7 +126,7 @@ const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
     ],
   },
   'nadaprabhu kempegowda station majestic': {
-    amenities: ['BUS_TERMINAL', 'RAILWAY', 'HOTELS', 'GOVERNMENT'],
+    amenities: ['BUS_TERMINAL', 'RAILWAY', 'HOTELS', 'GOVERNMENT', 'BIKE_PARKING', 'CAR_PARKING'],
     amenityDetails: [
       {
         category: 'BUS_TERMINAL',
@@ -132,6 +148,20 @@ const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
         distanceMeters: 300,
         walkMinutes: 4,
         description: 'Budget and mid-range hotels cluster',
+      },
+      {
+        category: 'BIKE_PARKING',
+        name: 'Majestic Two-Wheeler Parking',
+        distanceMeters: 50,
+        walkMinutes: 1,
+        description: 'Capacity 300 bikes. ₹5/hr, ₹30/day. Currently 112 spots available.',
+      },
+      {
+        category: 'CAR_PARKING',
+        name: 'Majestic Car Parking',
+        distanceMeters: 80,
+        walkMinutes: 1,
+        description: 'Capacity 80 cars. ₹30/hr, ₹150/day. Often full on weekdays after 9am.',
       },
     ],
   },
@@ -181,7 +211,7 @@ const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
     ],
   },
   baiyappanahalli: {
-    amenities: ['RAILWAY', 'BUS_TERMINAL'],
+    amenities: ['RAILWAY', 'BUS_TERMINAL', 'BIKE_PARKING', 'CAR_PARKING'],
     amenityDetails: [
       {
         category: 'RAILWAY',
@@ -190,10 +220,24 @@ const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
         walkMinutes: 4,
         description: 'Suburban railway connectivity',
       },
+      {
+        category: 'BIKE_PARKING',
+        name: 'Baiyappanahalli Bike Parking',
+        distanceMeters: 60,
+        walkMinutes: 1,
+        description: 'Capacity 200 bikes. ₹5/hr, ₹25/day. 89 spots available.',
+      },
+      {
+        category: 'CAR_PARKING',
+        name: 'Baiyappanahalli Car Parking',
+        distanceMeters: 80,
+        walkMinutes: 1,
+        description: 'Capacity 60 cars. ₹25/hr, ₹120/day. 14 spots available.',
+      },
     ],
   },
   whitefield: {
-    amenities: ['TECH_PARKS', 'HOTELS', 'MALLS'],
+    amenities: ['TECH_PARKS', 'HOTELS', 'MALLS', 'BIKE_PARKING', 'CAR_PARKING'],
     amenityDetails: [
       {
         category: 'TECH_PARKS',
@@ -216,6 +260,46 @@ const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
         walkMinutes: 15,
         description: '5-star business hotel',
       },
+      {
+        category: 'BIKE_PARKING',
+        name: 'Whitefield Bike Parking',
+        distanceMeters: 100,
+        walkMinutes: 2,
+        description: 'Capacity 400 bikes. ₹5/hr, ₹30/day. Multi-level facility. 187 spots available.',
+      },
+      {
+        category: 'CAR_PARKING',
+        name: 'Whitefield Multi-level Car Park',
+        distanceMeters: 150,
+        walkMinutes: 2,
+        description: 'Capacity 150 cars. ₹30/hr, ₹150/day. 62 spots currently available.',
+      },
+    ],
+  },
+  'electronic city': {
+    amenities: ['TECH_PARKS', 'BIKE_PARKING', 'CAR_PARKING'],
+    amenityDetails: [
+      {
+        category: 'TECH_PARKS',
+        name: 'Electronic City Tech Park Cluster',
+        distanceMeters: 600,
+        walkMinutes: 8,
+        description: 'Major tech park zone with large commuter traffic.',
+      },
+      {
+        category: 'BIKE_PARKING',
+        name: 'Electronic City Bike Parking',
+        distanceMeters: 80,
+        walkMinutes: 1,
+        description: 'Largest bike parking on Green Line. Capacity 500. ₹5/hr. 234 spots available.',
+      },
+      {
+        category: 'CAR_PARKING',
+        name: 'Electronic City Car Parking',
+        distanceMeters: 100,
+        walkMinutes: 2,
+        description: 'Capacity 200 cars. ₹30/hr, ₹150/day. 78 spots available. Tech park commuters.',
+      },
     ],
   },
   krishnarajapura: {
@@ -231,7 +315,7 @@ const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
     ],
   },
   'silk institute': {
-    amenities: ['EDUCATION', 'TECH_PARKS'],
+    amenities: ['EDUCATION', 'TECH_PARKS', 'BIKE_PARKING', 'CAR_PARKING'],
     amenityDetails: [
       {
         category: 'EDUCATION',
@@ -246,6 +330,20 @@ const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
         distanceMeters: 500,
         walkMinutes: 7,
         description: 'Electronics City tech corridor start',
+      },
+      {
+        category: 'BIKE_PARKING',
+        name: 'Silk Institute Bike Parking',
+        distanceMeters: 60,
+        walkMinutes: 1,
+        description: 'Capacity 250 bikes. ₹5/hr. Currently FULL during peak hours.',
+      },
+      {
+        category: 'CAR_PARKING',
+        name: 'Silk Institute Car Parking',
+        distanceMeters: 80,
+        walkMinutes: 1,
+        description: 'Capacity 100 cars. ₹30/hr. Currently FULL — arrive before 8am.',
       },
     ],
   },
@@ -307,7 +405,7 @@ const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
     ],
   },
   yeshwanthpur: {
-    amenities: ['RAILWAY', 'MALLS', 'BUS_TERMINAL'],
+    amenities: ['RAILWAY', 'MALLS', 'BUS_TERMINAL', 'BIKE_PARKING'],
     amenityDetails: [
       {
         category: 'RAILWAY',
@@ -322,6 +420,32 @@ const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
         distanceMeters: 1000,
         walkMinutes: 13,
         description: 'Large premium mall',
+      },
+      {
+        category: 'BIKE_PARKING',
+        name: 'Yeshwanthpur Bike Parking',
+        distanceMeters: 70,
+        walkMinutes: 1,
+        description: 'Bike only. No car parking available. Capacity 180 bikes. 45 spots available.',
+      },
+    ],
+  },
+  jayanagar: {
+    amenities: ['BIKE_PARKING', 'CAR_PARKING'],
+    amenityDetails: [
+      {
+        category: 'BIKE_PARKING',
+        name: 'Jayanagar Bike Parking',
+        distanceMeters: 50,
+        walkMinutes: 1,
+        description: 'Capacity 120 bikes. ₹5/hr, ₹25/day. 23 spots available.',
+      },
+      {
+        category: 'CAR_PARKING',
+        name: 'Jayanagar Car Parking',
+        distanceMeters: 70,
+        walkMinutes: 1,
+        description: 'Capacity 40 cars. ₹25/hr, ₹120/day. 5 spots available — limited.',
       },
     ],
   },
@@ -349,9 +473,113 @@ const STATION_NAME_ALIAS: Record<string, string> = {
   'kr puram': 'krishnarajapura',
   'silk institute (yelachenahalli)': 'silk institute',
   yelachenahalli: 'silk institute',
+  'silk institute (electronic city)': 'silk institute',
   malleshwaram: 'sampige road',
   'electronic city': 'silk institute',
   'peenya industry': 'peenya',
+};
+
+const STATION_PARKING_MAP: Record<string, StationParking> = {
+  'nadaprabhu kempegowda station majestic': {
+    stationName: 'Nadaprabhu Kempegowda Station Majestic',
+    hasBikeParking: true,
+    hasCarParking: true,
+    bike: {
+      capacity: 300,
+      available: 112,
+      pricing: '₹5/hr, ₹30/day',
+    },
+    car: {
+      capacity: 80,
+      available: 0,
+      pricing: '₹30/hr, ₹150/day',
+    },
+  },
+  whitefield: {
+    stationName: 'Whitefield',
+    hasBikeParking: true,
+    hasCarParking: true,
+    bike: {
+      capacity: 400,
+      available: 187,
+      pricing: '₹5/hr, ₹30/day',
+    },
+    car: {
+      capacity: 150,
+      available: 62,
+      pricing: '₹30/hr, ₹150/day',
+    },
+  },
+  'electronic city': {
+    stationName: 'Electronic City',
+    hasBikeParking: true,
+    hasCarParking: true,
+    bike: {
+      capacity: 500,
+      available: 234,
+      pricing: '₹5/hr',
+    },
+    car: {
+      capacity: 200,
+      available: 78,
+      pricing: '₹30/hr, ₹150/day',
+    },
+  },
+  baiyappanahalli: {
+    stationName: 'Baiyappanahalli',
+    hasBikeParking: true,
+    hasCarParking: true,
+    bike: {
+      capacity: 200,
+      available: 89,
+      pricing: '₹5/hr, ₹25/day',
+    },
+    car: {
+      capacity: 60,
+      available: 14,
+      pricing: '₹25/hr, ₹120/day',
+    },
+  },
+  yeshwanthpur: {
+    stationName: 'Yeshwanthpur',
+    hasBikeParking: true,
+    hasCarParking: false,
+    bike: {
+      capacity: 180,
+      available: 45,
+      pricing: '₹5/hr',
+    },
+  },
+  'silk institute': {
+    stationName: 'Silk Institute',
+    hasBikeParking: true,
+    hasCarParking: true,
+    bike: {
+      capacity: 250,
+      available: 0,
+      pricing: '₹5/hr',
+    },
+    car: {
+      capacity: 100,
+      available: 0,
+      pricing: '₹30/hr',
+    },
+  },
+  jayanagar: {
+    stationName: 'Jayanagar',
+    hasBikeParking: true,
+    hasCarParking: true,
+    bike: {
+      capacity: 120,
+      available: 23,
+      pricing: '₹5/hr, ₹25/day',
+    },
+    car: {
+      capacity: 40,
+      available: 5,
+      pricing: '₹25/hr, ₹120/day',
+    },
+  },
 };
 
 function normalizeAmenityStationName(stationName: string): string {
@@ -364,6 +592,10 @@ function resolveAmenityStationName(stationName: string): string {
 }
 
 function getStationAmenityPayload(stationName: string): StationAmenityPayload | null {
+  const normalized = normalizeAmenityStationName(stationName);
+  const direct = STATION_AMENITY_MAP[normalized];
+  if (direct) return direct;
+
   const resolved = resolveAmenityStationName(stationName);
   return STATION_AMENITY_MAP[resolved] ?? null;
 }
@@ -842,4 +1074,13 @@ export function getAmenityDetails(
     s => resolveAmenityStationName(s.name) === resolveAmenityStationName(stationName)
   );
   return station?.amenityDetails ?? [];
+}
+
+export function getStationParking(stationName: string): StationParking | null {
+  const normalized = normalizeAmenityStationName(stationName);
+  const direct = STATION_PARKING_MAP[normalized];
+  if (direct) return direct;
+
+  const resolved = resolveAmenityStationName(stationName);
+  return STATION_PARKING_MAP[resolved] ?? null;
 }

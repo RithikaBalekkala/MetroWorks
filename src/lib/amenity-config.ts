@@ -123,6 +123,28 @@ export const AMENITY_CONFIG: Record<AmenityCategory, AmenityDisplayConfig> = {
     dotColor: 'bg-indigo-500',
     description: 'Government buildings and offices nearby',
   },
+  BIKE_PARKING: {
+    category: 'BIKE_PARKING',
+    label: 'Bike Parking',
+    shortLabel: 'Bike Park',
+    emoji: '🏍️',
+    bgColor: 'bg-cyan-50',
+    textColor: 'text-cyan-700',
+    borderColor: 'border-cyan-200',
+    dotColor: 'bg-cyan-500',
+    description: 'Two-wheeler and bike parking available at this station',
+  },
+  CAR_PARKING: {
+    category: 'CAR_PARKING',
+    label: 'Car Parking',
+    shortLabel: 'Car Park',
+    emoji: '🚗',
+    bgColor: 'bg-teal-50',
+    textColor: 'text-teal-700',
+    borderColor: 'border-teal-200',
+    dotColor: 'bg-teal-500',
+    description: 'Four-wheeler car parking available at this station',
+  },
 };
 
 export function getAmenityConfig(

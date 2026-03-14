@@ -81,6 +81,8 @@ function BookingStationSelector({
     'RAILWAY',
     'BUS_TERMINAL',
     'GOVERNMENT',
+    'BIKE_PARKING',
+    'CAR_PARKING',
   ];
 
   const selectedStation = stations.find(station => station.id === value) ?? null;
