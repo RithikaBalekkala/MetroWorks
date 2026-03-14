@@ -6,10 +6,19 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
 import AppShell from '@/components/AppShell';
+import { AmenityBadgeGroup } from '@/components/AmenityBadge';
 import { useTranslation } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import { useWallet } from '@/lib/wallet-context';
-import { GREEN_LINE, PURPLE_LINE, analyseModification } from '@/lib/metro-network';
+import {
+  GREEN_LINE,
+  PURPLE_LINE,
+  analyseModification,
+  getAmenityDetails,
+  getStationAmenities,
+  type AmenityInfo,
+} from '@/lib/metro-network';
+import { getAmenityConfig } from '@/lib/amenity-config';
 import {
   useBooking,
   type Ticket,
@@ -239,6 +248,15 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
   const coachRecommendation = getCoachRecommendation(ticket, directionLabel);
   const [showHistory, setShowHistory] = useState(false);
   const maxModificationsReached = (ticket.modificationCount ?? 0) >= 3;
+  const [showAmenityDetails, setShowAmenityDetails] = useState(false);
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
+  const destinationAmenities = getStationAmenities(ticket.toStation);
+  const destinationAmenityDetails = getAmenityDetails(ticket.toStation)
+    .slice()
+    .sort((a, b) => a.walkMinutes - b.walkMinutes);
+  const visibleAmenityDetails = showAllAmenities
+    ? destinationAmenityDetails
+    : destinationAmenityDetails.slice(0, 3);
 
   // QR code data
   const qrPayload = buildBookingHmacPayload({
@@ -374,6 +392,70 @@ function TicketCard({ ticket, onCancel, onModify, onMarkScanned, onDraftRefund }
                 </div>
                 <p className="text-xs text-[#2C5282] mt-1">{coachRecommendation.note}</p>
               </div>
+
+              {destinationAmenities.length > 0 && (
+                <>
+                  <div className="border-t border-dashed border-gray-200 my-3" />
+                  <div className="min-h-[52px]">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm font-semibold text-gray-700">📍 Near {ticket.toStation}</span>
+                      <span className="text-xs text-gray-400">Amenities within walking distance</span>
+                    </div>
+
+                    <AmenityBadgeGroup
+                      categories={destinationAmenities}
+                      size="md"
+                    />
+
+                    {destinationAmenityDetails.length > 0 && (
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAmenityDetails(prev => !prev)}
+                          className="text-xs text-gray-500 hover:text-gray-700"
+                        >
+                          {showAmenityDetails ? 'Hide details ▴' : 'View details ▾'}
+                        </button>
+
+                        {showAmenityDetails && (
+                          <div className="mt-3 space-y-2">
+                            {visibleAmenityDetails.map((info: AmenityInfo, idx) => {
+                              const config = getAmenityConfig(info.category);
+                              return (
+                                <div key={`${info.name}-${idx}`} className="bg-white border border-gray-100 rounded-xl p-3">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {config.emoji} {info.name}
+                                    </p>
+                                    <span className="text-xs text-gray-400">{info.walkMinutes} min walk</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500 mt-1">{info.description}</p>
+                                  <div className="mt-2">
+                                    <span className="bg-gray-50 text-gray-500 text-xs rounded-full px-2 py-0.5">
+                                      {info.distanceMeters}m away
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {!showAllAmenities && destinationAmenityDetails.length > 3 && (
+                              <button
+                                type="button"
+                                onClick={() => setShowAllAmenities(true)}
+                                className="text-xs text-[#7B2D8B] hover:text-[#6a2679]"
+                              >
+                                Show all {destinationAmenityDetails.length} places
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="border-t border-dashed border-gray-200 my-3" />
+                </>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

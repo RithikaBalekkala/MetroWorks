@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { runWithFallback } from '@/lib/adk/mock-runner';
 import { parseJsonSafe } from '@/lib/adk/runner';
+import {
+  detectAmenityCategoryFromMessage,
+  shouldRouteToPlacesForAmenity,
+} from '@/agents/orchestratorAgent';
 
 interface OrchestratorRequest {
   intent?: string;
@@ -12,7 +16,10 @@ interface OrchestratorRequest {
 }
 
 function fallbackEnvelope(body: OrchestratorRequest) {
-  const intent = body.intent ?? 'chat';
+  const message = body.message ?? '';
+  const amenityCategory = detectAmenityCategoryFromMessage(message);
+  const intent = body.intent ?? (shouldRouteToPlacesForAmenity(message) ? 'places' : 'chat');
+
   return {
     agentName: 'orchestrator_agent',
     reasoning: 'Deterministic fallback orchestrator path was used.',
@@ -28,6 +35,7 @@ function fallbackEnvelope(body: OrchestratorRequest) {
       to: body.to,
       station: body.station,
       timeOfDay: body.timeOfDay ?? 'afternoon',
+      amenityCategory,
     },
   };
 }
@@ -40,14 +48,18 @@ export async function POST(request: Request) {
     body = {};
   }
 
+  const resolvedIntent = body.intent ?? (shouldRouteToPlacesForAmenity(body.message ?? '') ? 'places' : 'chat');
+  const detectedAmenityCategory = detectAmenityCategoryFromMessage(body.message ?? '');
+
   const prompt = [
     'You are orchestrator agent. Choose one specialist route among: chat, refund, places, crowd, frequency.',
-    `intent=${body.intent ?? 'chat'}`,
+    `intent=${resolvedIntent}`,
     `message=${body.message ?? 'No message provided'}`,
     `from=${body.from ?? ''}`,
     `to=${body.to ?? ''}`,
     `station=${body.station ?? ''}`,
     `timeOfDay=${body.timeOfDay ?? 'afternoon'}`,
+    `amenityCategory=${detectedAmenityCategory ?? 'none'}`,
     'Return strict JSON only.',
   ].join('\n');
 

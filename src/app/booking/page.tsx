@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
 import LiveMetroMap from '@/components/LiveMetroMap';
@@ -9,7 +9,16 @@ import { useAuth } from '@/lib/auth-context';
 import { useWallet } from '@/lib/wallet-context';
 import { useBooking } from '@/lib/booking-context';
 import { getSimulatedTrains } from '@/lib/gtfs-simulator';
-import { ALL_STATIONS, calculateRoute, type Station, type RouteResult } from '@/lib/metro-network';
+import {
+  ALL_STATIONS,
+  calculateRoute,
+  getStationAmenities,
+  type AmenityCategory,
+  type Station,
+  type RouteResult,
+} from '@/lib/metro-network';
+import { getAmenityConfig } from '@/lib/amenity-config';
+import { AmenityBadgeGroup } from '@/components/AmenityBadge';
 import {
   Train,
   MapPin,
@@ -33,6 +42,182 @@ function getBoardingPreview(stationId: string): { platform: 1 | 2; doorSide: Doo
   const sideIndex = hash % 3;
   const doorSide: DoorSide = sideIndex === 0 ? 'LEFT' : sideIndex === 1 ? 'RIGHT' : 'BOTH';
   return { platform, doorSide };
+}
+
+function BookingStationSelector({
+  label,
+  value,
+  disabled,
+  onChange,
+  icon,
+  stations,
+  accent,
+  excludeStationId,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  disabled: boolean;
+  onChange: (stationId: string) => void;
+  icon: React.ReactNode;
+  stations: Station[];
+  accent: string;
+  excludeStationId?: string;
+  placeholder: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<AmenityCategory[]>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const AMENITY_FILTERS: AmenityCategory[] = [
+    'HOSPITALS',
+    'EDUCATION',
+    'HOTELS',
+    'MALLS',
+    'TOURISM',
+    'TECH_PARKS',
+    'RAILWAY',
+    'BUS_TERMINAL',
+    'GOVERNMENT',
+  ];
+
+  const selectedStation = stations.find(station => station.id === value) ?? null;
+  const filteredStations = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+
+    return stations.filter(station => {
+      if (station.id === excludeStationId) return false;
+
+      const matchSearch = !normalized || station.name.toLowerCase().includes(normalized);
+      if (!matchSearch) return false;
+
+      if (activeFilters.length === 0) return true;
+
+      const categories = getStationAmenities(station.name);
+      return categories.some(category => activeFilters.includes(category));
+    });
+  }, [activeFilters, excludeStationId, query, stations]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onDocClick = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [isOpen]);
+
+  return (
+    <div ref={containerRef}>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {icon}
+        {label}
+      </label>
+
+      <div className={`relative border border-gray-300 rounded-xl bg-white ${disabled ? 'opacity-70' : ''}`}>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setIsOpen(prev => !prev)}
+          className={`w-full px-4 py-3 text-left flex items-center justify-between rounded-xl ${accent} disabled:cursor-not-allowed`}
+        >
+          <span className={`text-sm ${selectedStation ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+            {selectedStation ? selectedStation.name : placeholder}
+          </span>
+          <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {isOpen && !disabled && (
+          <div className="absolute left-0 right-0 mt-1 z-40 bg-white border border-gray-200 rounded-xl shadow-xl p-3">
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search station"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#7B2D8B]"
+            />
+
+            <div className="mt-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">Filter by amenity:</p>
+                {activeFilters.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilters([])}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {AMENITY_FILTERS.map(category => {
+                  const config = getAmenityConfig(category);
+                  const active = activeFilters.includes(category);
+
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setActiveFilters(prev => (
+                        prev.includes(category)
+                          ? prev.filter(item => item !== category)
+                          : [...prev, category]
+                      ))}
+                      className={`text-xs border rounded-full px-2 py-0.5 ${
+                        active
+                          ? `${config.bgColor} ${config.textColor} ${config.borderColor}`
+                          : 'bg-white text-gray-600 border-gray-300'
+                      }`}
+                    >
+                      {config.emoji} {config.shortLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-2 max-h-64 overflow-y-auto space-y-1">
+              {filteredStations.length === 0 ? (
+                <p className="text-xs text-gray-500 px-2 py-2">No stations match search/filter.</p>
+              ) : (
+                filteredStations.map(station => (
+                  <button
+                    key={station.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(station.id);
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-lg text-left"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm font-medium text-gray-900 truncate">{station.name}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                        station.line === 'purple'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {station.line === 'purple' ? '● Purple' : '● Green'}
+                      </span>
+                    </div>
+                    <AmenityBadgeGroup
+                      categories={getStationAmenities(station.name)}
+                      size="xs"
+                      maxVisible={3}
+                    />
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function BookingPage() {
@@ -79,6 +264,18 @@ export default function BookingPage() {
   // Sort stations alphabetically
   const sortedStations = useMemo(() => {
     return [...ALL_STATIONS].sort((a: Station, b: Station) => a.name.localeCompare(b.name));
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const toParam = params.get('to');
+    if (!toParam) return;
+
+    const normalized = toParam.trim().toLowerCase();
+    const matched = ALL_STATIONS.find(station => station.name.trim().toLowerCase() === normalized);
+    if (matched) {
+      setToStation(matched.id);
+    }
   }, []);
 
   // Set default date/time
@@ -345,50 +542,32 @@ export default function BookingPage() {
               <div className="space-y-5">
                 {/* From Station */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <MapPin className="w-4 h-4 inline mr-1 text-[#7B2D8B]" />
-                    {t('booking.source')}
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={fromStation}
-                      onChange={e => setFromStation(e.target.value)}
-                      disabled={step === 'confirm'}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#7B2D8B] focus:border-transparent outline-none appearance-none bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select source station</option>
-                      {sortedStations.map((station: Station) => (
-                        <option key={station.id} value={station.id} disabled={station.id === toStation}>
-                          {station.name} ({station.line === 'purple' ? 'Purple' : 'Green'})
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                  </div>
+                  <BookingStationSelector
+                    label={t('booking.source')}
+                    value={fromStation}
+                    disabled={step === 'confirm'}
+                    onChange={setFromStation}
+                    stations={sortedStations}
+                    excludeStationId={toStation}
+                    accent="focus:ring-2 focus:ring-[#7B2D8B]"
+                    icon={<MapPin className="w-4 h-4 inline mr-1 text-[#7B2D8B]" />}
+                    placeholder="Select source station"
+                  />
                 </div>
 
                 {/* To Station */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <MapPin className="w-4 h-4 inline mr-1 text-[#00A550]" />
-                    {t('booking.destination')}
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={toStation}
-                      onChange={e => setToStation(e.target.value)}
-                      disabled={step === 'confirm'}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00A550] focus:border-transparent outline-none appearance-none bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select destination station</option>
-                      {sortedStations.map((station: Station) => (
-                        <option key={station.id} value={station.id} disabled={station.id === fromStation}>
-                          {station.name} ({station.line === 'purple' ? 'Purple' : 'Green'})
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                  </div>
+                  <BookingStationSelector
+                    label={t('booking.destination')}
+                    value={toStation}
+                    disabled={step === 'confirm'}
+                    onChange={setToStation}
+                    stations={sortedStations}
+                    excludeStationId={fromStation}
+                    accent="focus:ring-2 focus:ring-[#00A550]"
+                    icon={<MapPin className="w-4 h-4 inline mr-1 text-[#00A550]" />}
+                    placeholder="Select destination station"
+                  />
                 </div>
 
                 {/* Date & Time */}

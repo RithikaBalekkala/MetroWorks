@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { calculateRoute, ALL_STATIONS } from '@/lib/metro-network';
 import { runWithFallback } from '@/lib/adk/mock-runner';
 import { parseJsonSafe } from '@/lib/adk/runner';
+import type { AmenityCategory } from '@/lib/metro-network';
+import { getStationAmenities } from '@/lib/metro-network';
+import { queryAmenityByCategory } from '@/agents/placesAgent';
+import { detectAmenityCategoryFromMessage, shouldRouteToPlacesForAmenity } from '@/agents/orchestratorAgent';
 
 interface HomeChatRequest {
   message?: string;
@@ -13,6 +17,15 @@ interface HomeChatResponse {
   summary: string;
   details: Array<{ label: string; value: string }>;
   quickFollowUps: string[];
+}
+
+interface AmenityChatResponse {
+  answerType: 'AMENITY';
+  category: AmenityCategory;
+  stations: string[];
+  primaryRecommendation: string;
+  details: string;
+  userQuery: string;
 }
 
 function normalize(text: string): string {
@@ -63,6 +76,38 @@ function findStationIdByName(name: string): string | null {
   const needle = normalize(name);
   const station = ALL_STATIONS.find(s => normalize(s.name) === needle);
   return station?.id ?? null;
+}
+
+function extractStationMention(message: string): string | null {
+  const msg = normalize(message);
+  const found = ALL_STATIONS.find(station => stationAliases(station.name).some(alias => msg.includes(alias)));
+  return found?.name ?? null;
+}
+
+function buildAmenityResponse(message: string): AmenityChatResponse | null {
+  const detectedCategory = detectAmenityCategoryFromMessage(message);
+  const nearStation = extractStationMention(message) ?? undefined;
+
+  const category = detectedCategory ?? (() => {
+    if (!nearStation) return null;
+    const categories = getStationAmenities(nearStation);
+    return categories.length > 0 ? categories[0] : null;
+  })();
+
+  if (!category) {
+    return null;
+  }
+
+  const result = queryAmenityByCategory(category, nearStation);
+
+  return {
+    answerType: 'AMENITY',
+    category,
+    stations: result.stations,
+    primaryRecommendation: result.primaryRecommendation,
+    details: result.details,
+    userQuery: message,
+  };
 }
 
 function routeFacts(fromName: string, toName: string): Record<string, string> {
@@ -150,6 +195,13 @@ export async function POST(request: Request) {
   const message = (body.message ?? '').trim();
   if (!message) {
     return NextResponse.json({ status: 'ok', data: fallbackGeneralAnswer() });
+  }
+
+  if (shouldRouteToPlacesForAmenity(message)) {
+    const amenityResponse = buildAmenityResponse(message);
+    if (amenityResponse) {
+      return NextResponse.json({ status: 'ok', data: amenityResponse });
+    }
   }
 
   const extracted = extractStations(message);

@@ -7,6 +7,26 @@
 
 export type LineColor = 'purple' | 'green';
 
+export type AmenityCategory =
+  | 'HOSPITALS'
+  | 'EDUCATION'
+  | 'HOTELS'
+  | 'MALLS'
+  | 'TOURISM'
+  | 'TECH_PARKS'
+  | 'RAILWAY'
+  | 'BUS_TERMINAL'
+  | 'AIRPORT_CONNECT'
+  | 'GOVERNMENT';
+
+export interface AmenityInfo {
+  category: AmenityCategory;
+  name: string;
+  distanceMeters: number;
+  walkMinutes: number;
+  description: string;
+}
+
 export interface Station {
   id: string;
   name: string;
@@ -17,6 +37,8 @@ export interface Station {
   index: number;
   /** Is this station an interchange? */
   interchange?: LineColor[];
+  amenities?: AmenityCategory[];
+  amenityDetails?: AmenityInfo[];
 }
 
 export interface RouteSegment {
@@ -34,6 +56,316 @@ export interface RouteResult {
   totalStations: number;
   fare: number;
   interchanges: string[];
+}
+
+interface StationAmenityPayload {
+  amenities: AmenityCategory[];
+  amenityDetails: AmenityInfo[];
+}
+
+const STATION_AMENITY_MAP: Record<string, StationAmenityPayload> = {
+  'mahatma gandhi road': {
+    amenities: ['HOTELS', 'MALLS', 'TOURISM'],
+    amenityDetails: [
+      {
+        category: 'HOTELS',
+        name: 'The Oberoi Bengaluru',
+        distanceMeters: 400,
+        walkMinutes: 5,
+        description: 'Luxury 5-star hotel',
+      },
+      {
+        category: 'MALLS',
+        name: 'Brigade Road Shopping',
+        distanceMeters: 300,
+        walkMinutes: 4,
+        description: 'Major shopping street',
+      },
+      {
+        category: 'TOURISM',
+        name: 'MG Road Commercial Hub',
+        distanceMeters: 100,
+        walkMinutes: 2,
+        description: 'Central business district',
+      },
+    ],
+  },
+  indiranagar: {
+    amenities: ['HOSPITALS', 'HOTELS', 'MALLS'],
+    amenityDetails: [
+      {
+        category: 'HOSPITALS',
+        name: 'Manipal Hospital',
+        distanceMeters: 1200,
+        walkMinutes: 15,
+        description: 'Multi-specialty hospital',
+      },
+      {
+        category: 'MALLS',
+        name: '100 Feet Road Restaurants',
+        distanceMeters: 200,
+        walkMinutes: 3,
+        description: 'Popular dining and shopping zone',
+      },
+    ],
+  },
+  'nadaprabhu kempegowda station majestic': {
+    amenities: ['BUS_TERMINAL', 'RAILWAY', 'HOTELS', 'GOVERNMENT'],
+    amenityDetails: [
+      {
+        category: 'BUS_TERMINAL',
+        name: 'KSRTC Majestic Bus Stand',
+        distanceMeters: 100,
+        walkMinutes: 2,
+        description: 'Main intercity bus terminal',
+      },
+      {
+        category: 'RAILWAY',
+        name: 'KSR Bengaluru City Railway Station',
+        distanceMeters: 500,
+        walkMinutes: 7,
+        description: 'Main railway station',
+      },
+      {
+        category: 'HOTELS',
+        name: 'Hotel Woodlands',
+        distanceMeters: 300,
+        walkMinutes: 4,
+        description: 'Budget and mid-range hotels cluster',
+      },
+    ],
+  },
+  'dr. b.r. ambedkar station vidhana soudha': {
+    amenities: ['GOVERNMENT', 'TOURISM'],
+    amenityDetails: [
+      {
+        category: 'GOVERNMENT',
+        name: 'Vidhana Soudha',
+        distanceMeters: 200,
+        walkMinutes: 3,
+        description: 'Karnataka State Legislature Building',
+      },
+      {
+        category: 'TOURISM',
+        name: 'Cubbon Park',
+        distanceMeters: 400,
+        walkMinutes: 5,
+        description: 'Historic public park, 300 acres',
+      },
+    ],
+  },
+  'cubbon park': {
+    amenities: ['TOURISM', 'GOVERNMENT', 'HOSPITALS'],
+    amenityDetails: [
+      {
+        category: 'TOURISM',
+        name: 'Cubbon Park',
+        distanceMeters: 100,
+        walkMinutes: 2,
+        description: 'Historic public park',
+      },
+      {
+        category: 'HOSPITALS',
+        name: 'Bowring Hospital',
+        distanceMeters: 800,
+        walkMinutes: 10,
+        description: 'Government general hospital',
+      },
+      {
+        category: 'GOVERNMENT',
+        name: 'High Court of Karnataka',
+        distanceMeters: 600,
+        walkMinutes: 8,
+        description: 'Karnataka High Court',
+      },
+    ],
+  },
+  baiyappanahalli: {
+    amenities: ['RAILWAY', 'BUS_TERMINAL'],
+    amenityDetails: [
+      {
+        category: 'RAILWAY',
+        name: 'Baiyappanahalli Railway Station',
+        distanceMeters: 300,
+        walkMinutes: 4,
+        description: 'Suburban railway connectivity',
+      },
+    ],
+  },
+  whitefield: {
+    amenities: ['TECH_PARKS', 'HOTELS', 'MALLS'],
+    amenityDetails: [
+      {
+        category: 'TECH_PARKS',
+        name: 'ITPL — International Tech Park',
+        distanceMeters: 800,
+        walkMinutes: 10,
+        description: 'Major IT hub with 70+ companies',
+      },
+      {
+        category: 'MALLS',
+        name: 'Forum Shantiniketan Mall',
+        distanceMeters: 1000,
+        walkMinutes: 13,
+        description: 'Large shopping and entertainment mall',
+      },
+      {
+        category: 'HOTELS',
+        name: 'Marriott Whitefield',
+        distanceMeters: 1200,
+        walkMinutes: 15,
+        description: '5-star business hotel',
+      },
+    ],
+  },
+  krishnarajapura: {
+    amenities: ['RAILWAY', 'HOSPITALS'],
+    amenityDetails: [
+      {
+        category: 'RAILWAY',
+        name: 'KR Puram Railway Station',
+        distanceMeters: 400,
+        walkMinutes: 5,
+        description: 'Suburban railway station',
+      },
+    ],
+  },
+  'silk institute': {
+    amenities: ['EDUCATION', 'TECH_PARKS'],
+    amenityDetails: [
+      {
+        category: 'EDUCATION',
+        name: 'Central Silk Board',
+        distanceMeters: 200,
+        walkMinutes: 3,
+        description: 'Government silk research institute',
+      },
+      {
+        category: 'TECH_PARKS',
+        name: 'Silk Board IT Corridor',
+        distanceMeters: 500,
+        walkMinutes: 7,
+        description: 'Electronics City tech corridor start',
+      },
+    ],
+  },
+  nagasandra: {
+    amenities: ['MALLS', 'BUS_TERMINAL'],
+    amenityDetails: [
+      {
+        category: 'MALLS',
+        name: 'Esteem Mall',
+        distanceMeters: 700,
+        walkMinutes: 9,
+        description: 'Shopping mall',
+      },
+    ],
+  },
+  rajajinagar: {
+    amenities: ['HOSPITALS', 'EDUCATION', 'MALLS'],
+    amenityDetails: [
+      {
+        category: 'HOSPITALS',
+        name: 'Rajajinagar General Hospital',
+        distanceMeters: 500,
+        walkMinutes: 7,
+        description: 'Government district hospital',
+      },
+      {
+        category: 'MALLS',
+        name: 'Orion Mall',
+        distanceMeters: 1500,
+        walkMinutes: 18,
+        description: 'Premium mall near Dr Rajkumar Road',
+      },
+    ],
+  },
+  'sampige road': {
+    amenities: ['EDUCATION', 'HOSPITALS', 'TOURISM'],
+    amenityDetails: [
+      {
+        category: 'EDUCATION',
+        name: 'Indian Institute of Science (IISc)',
+        distanceMeters: 1800,
+        walkMinutes: 22,
+        description: 'Premier research university',
+      },
+      {
+        category: 'HOSPITALS',
+        name: 'Kidwai Memorial Institute',
+        distanceMeters: 1200,
+        walkMinutes: 15,
+        description: 'Speciality cancer hospital',
+      },
+      {
+        category: 'TOURISM',
+        name: 'Malleshwaram Market',
+        distanceMeters: 300,
+        walkMinutes: 4,
+        description: 'Historic neighbourhood and market',
+      },
+    ],
+  },
+  yeshwanthpur: {
+    amenities: ['RAILWAY', 'MALLS', 'BUS_TERMINAL'],
+    amenityDetails: [
+      {
+        category: 'RAILWAY',
+        name: 'Yeshwanthpur Railway Station',
+        distanceMeters: 200,
+        walkMinutes: 3,
+        description: 'Major railway junction',
+      },
+      {
+        category: 'MALLS',
+        name: 'Orion Mall',
+        distanceMeters: 1000,
+        walkMinutes: 13,
+        description: 'Large premium mall',
+      },
+    ],
+  },
+  peenya: {
+    amenities: ['TECH_PARKS', 'GOVERNMENT'],
+    amenityDetails: [
+      {
+        category: 'TECH_PARKS',
+        name: 'Peenya Industrial Area',
+        distanceMeters: 400,
+        walkMinutes: 5,
+        description: "One of Asia's largest industrial estates",
+      },
+    ],
+  },
+};
+
+const STATION_NAME_ALIAS: Record<string, string> = {
+  'mg road': 'mahatma gandhi road',
+  'majestic (kempegowda)': 'nadaprabhu kempegowda station majestic',
+  majestic: 'nadaprabhu kempegowda station majestic',
+  'kempegowda': 'nadaprabhu kempegowda station majestic',
+  'vidhana soudha': 'dr. b.r. ambedkar station vidhana soudha',
+  'whitefield (kadugodi)': 'whitefield',
+  'kr puram': 'krishnarajapura',
+  'silk institute (yelachenahalli)': 'silk institute',
+  yelachenahalli: 'silk institute',
+  malleshwaram: 'sampige road',
+  'electronic city': 'silk institute',
+  'peenya industry': 'peenya',
+};
+
+function normalizeAmenityStationName(stationName: string): string {
+  return stationName.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function resolveAmenityStationName(stationName: string): string {
+  const normalized = normalizeAmenityStationName(stationName);
+  return STATION_NAME_ALIAS[normalized] ?? normalized;
+}
+
+function getStationAmenityPayload(stationName: string): StationAmenityPayload | null {
+  const resolved = resolveAmenityStationName(stationName);
+  return STATION_AMENITY_MAP[resolved] ?? null;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -112,8 +444,29 @@ const greenStations: Omit<Station, 'line'>[] = [
 ];
 
 // Combine into typed stations
-export const PURPLE_LINE: Station[] = purpleStations.map(s => ({ ...s, line: 'purple' as LineColor }));
-export const GREEN_LINE: Station[]  = greenStations.map(s => ({ ...s, line: 'green' as LineColor }));
+export const PURPLE_LINE: Station[] = purpleStations.map(s => {
+  const amenityPayload = getStationAmenityPayload(s.name);
+  return {
+    ...s,
+    line: 'purple' as LineColor,
+    ...(amenityPayload ? {
+      amenities: amenityPayload.amenities,
+      amenityDetails: amenityPayload.amenityDetails,
+    } : {}),
+  };
+});
+
+export const GREEN_LINE: Station[]  = greenStations.map(s => {
+  const amenityPayload = getStationAmenityPayload(s.name);
+  return {
+    ...s,
+    line: 'green' as LineColor,
+    ...(amenityPayload ? {
+      amenities: amenityPayload.amenities,
+      amenityDetails: amenityPayload.amenityDetails,
+    } : {}),
+  };
+});
 export const ALL_STATIONS: Station[] = [...PURPLE_LINE, ...GREEN_LINE];
 
 /** Average minutes between adjacent stations on each line */
@@ -463,4 +816,30 @@ export function analyseModification(
     newStops: newRoute.totalStations,
     newLine,
   };
+}
+
+export function getStationAmenities(
+  stationName: string
+): AmenityCategory[] {
+  const station = ALL_STATIONS.find(
+    s => resolveAmenityStationName(s.name) === resolveAmenityStationName(stationName)
+  );
+  return station?.amenities ?? [];
+}
+
+export function getStationsWithAmenity(
+  category: AmenityCategory
+): string[] {
+  return ALL_STATIONS
+    .filter(s => s.amenities?.includes(category))
+    .map(s => s.name);
+}
+
+export function getAmenityDetails(
+  stationName: string
+): AmenityInfo[] {
+  const station = ALL_STATIONS.find(
+    s => resolveAmenityStationName(s.name) === resolveAmenityStationName(stationName)
+  );
+  return station?.amenityDetails ?? [];
 }

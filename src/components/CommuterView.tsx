@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppState } from '@/lib/state-provider';
@@ -10,8 +10,12 @@ import {
   GREEN_LINE,
   calculateRoute,
   lineColorHex,
+  getStationAmenities,
+  type AmenityCategory,
   Station,
 } from '@/lib/metro-network';
+import { getAmenityConfig } from '@/lib/amenity-config';
+import { AmenityBadgeGroup } from '@/components/AmenityBadge';
 import { serialiseTicket } from '@/lib/crypto-ticket';
 import { getSimulatedTrains, TrainPosition } from '@/lib/gtfs-simulator';
 import LiveMetroMap from '@/components/LiveMetroMap';
@@ -270,33 +274,164 @@ function StationSelector({
   icon: React.ReactNode;
   color: string;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [activeAmenityFilters, setActiveAmenityFilters] = useState<AmenityCategory[]>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const AMENITY_FILTERS: AmenityCategory[] = [
+    'HOSPITALS',
+    'EDUCATION',
+    'HOTELS',
+    'MALLS',
+    'TOURISM',
+    'TECH_PARKS',
+    'RAILWAY',
+    'BUS_TERMINAL',
+    'GOVERNMENT',
+  ];
+
+  const selectedStation = ALL_STATIONS.find(st => st.id === value) ?? null;
+  const normalizedSearch = search.trim().toLowerCase();
+
+  const stations = useMemo(() => {
+    const lineSorted = [...ALL_STATIONS].sort((a, b) => a.index - b.index);
+    const bySearch = lineSorted.filter(station => {
+      if (!normalizedSearch) return true;
+      return station.name.toLowerCase().includes(normalizedSearch);
+    });
+
+    if (activeAmenityFilters.length === 0) {
+      return bySearch;
+    }
+
+    return bySearch.filter(station => {
+      const categories = getStationAmenities(station.name);
+      return categories.some(category => activeAmenityFilters.includes(category));
+    });
+  }, [activeAmenityFilters, normalizedSearch]);
+
+  const toggleAmenityFilter = (category: AmenityCategory) => {
+    setActiveAmenityFilters(prev => (
+      prev.includes(category)
+        ? prev.filter(item => item !== category)
+        : [...prev, category]
+    ));
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isOpen]);
+
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <label className="text-[10px] font-mono text-black/50 uppercase tracking-wider mb-1 block">{label}</label>
-      <div className={`relative flex items-center bg-[#f2f7f3]/80 border rounded-xl px-3 py-2.5 ${color}`}>
-        <div className="mr-2 text-black/60">{icon}</div>
-        <select
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          className="bg-transparent text-black text-sm flex-1 outline-none appearance-none cursor-pointer"
+      <div className={`relative bg-[#f2f7f3]/80 border rounded-xl ${color}`}>
+        <button
+          type="button"
+          onClick={() => setIsOpen(prev => !prev)}
+          className="w-full flex items-center gap-2 px-3 py-2.5"
         >
-          <option value="" className="bg-[#f2f7f3]">Select Station</option>
-          <optgroup label="━━ Purple Line ━━" className="bg-[#f2f7f3]">
-            {PURPLE_LINE.map(s => (
-              <option key={s.id} value={s.id} className="bg-[#f2f7f3] text-purple-300">
-                🟣 {s.name}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="━━ Green Line ━━" className="bg-[#f2f7f3]">
-            {GREEN_LINE.map(s => (
-              <option key={s.id} value={s.id} className="bg-[#f2f7f3] text-green-300">
-                🟢 {s.name}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-        <ChevronDown className="w-4 h-4 text-black/40" />
+          <span className="text-black/60 shrink-0">{icon}</span>
+          <span className="text-black text-sm flex-1 text-left truncate">
+            {selectedStation ? selectedStation.name : 'Select Station'}
+          </span>
+          <ChevronDown className={`w-4 h-4 text-black/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {isOpen && (
+          <div className="absolute z-30 left-0 right-0 mt-1 rounded-xl border border-gray-200 bg-white shadow-xl p-2">
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search station"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#7B2D8B]"
+            />
+
+            <div className="mt-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">Filter by amenity:</p>
+                {activeAmenityFilters.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveAmenityFilters([])}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-1 flex flex-wrap gap-1">
+                {AMENITY_FILTERS.map(category => {
+                  const config = getAmenityConfig(category);
+                  const isActive = activeAmenityFilters.includes(category);
+
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => toggleAmenityFilter(category)}
+                      className={`text-xs border rounded-full px-2 py-0.5 ${
+                        isActive
+                          ? `${config.bgColor} ${config.textColor} ${config.borderColor}`
+                          : 'bg-white text-gray-600 border-gray-300'
+                      }`}
+                    >
+                      {config.emoji} {config.shortLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-2 max-h-64 overflow-y-auto space-y-1">
+              {stations.length === 0 ? (
+                <p className="text-xs text-gray-500 px-2 py-2">No stations match current search/filter.</p>
+              ) : (
+                stations.map(station => (
+                  <button
+                    key={station.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(station.id);
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-lg text-left"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm font-medium text-gray-900 truncate">
+                        {station.name}
+                      </span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                        station.line === 'purple'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {station.line === 'purple' ? '● Purple' : '● Green'}
+                      </span>
+                    </div>
+
+                    <AmenityBadgeGroup
+                      categories={getStationAmenities(station.name)}
+                      size="xs"
+                      maxVisible={3}
+                    />
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

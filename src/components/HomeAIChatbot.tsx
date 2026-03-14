@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { Bot, MessageCircle, Send, X } from 'lucide-react';
+import type { AmenityCategory } from '@/lib/metro-network';
+import AmenityResponseCard from '@/components/AmenityResponseCard';
 
 interface ChatAnswer {
   answerType: 'ROUTE' | 'TRAIN_INFO' | 'GENERAL';
@@ -11,17 +13,31 @@ interface ChatAnswer {
   quickFollowUps: string[];
 }
 
+interface AmenityAnswer {
+  answerType: 'AMENITY';
+  category: AmenityCategory;
+  stations: string[];
+  primaryRecommendation: string;
+  details: string;
+  userQuery: string;
+}
+
 interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
-  answer?: ChatAnswer;
+  answer?: ChatAnswer | AmenityAnswer;
 }
 
 const starterQuestions = [
   'Fare from Whitefield to Majestic',
   'Route from Indiranagar to Jayanagar',
   'What are train timings and frequency?',
+  'Which station is nearest to a hospital?',
 ];
+
+function isAmenityAnswer(value: ChatAnswer | AmenityAnswer): value is AmenityAnswer {
+  return value.answerType === 'AMENITY';
+}
 
 export default function HomeAIChatbot() {
   const [open, setOpen] = useState(false);
@@ -51,7 +67,7 @@ export default function HomeAIChatbot() {
         body: JSON.stringify({ message: q }),
       });
       const json = await res.json();
-      const data: ChatAnswer | undefined = json?.data;
+      const data: ChatAnswer | AmenityAnswer | undefined = json?.data;
 
       if (!data) {
         setMessages(prev => [
@@ -62,11 +78,15 @@ export default function HomeAIChatbot() {
           },
         ]);
       } else {
+        const assistantText = isAmenityAnswer(data)
+          ? `Best station: ${data.primaryRecommendation}`
+          : data.summary;
+
         setMessages(prev => [
           ...prev,
           {
             role: 'assistant',
-            text: data.summary,
+            text: assistantText,
             answer: data,
           },
         ]);
@@ -125,27 +145,39 @@ export default function HomeAIChatbot() {
 
                 {msg.answer && (
                   <div className="mt-2 rounded-xl border border-gray-100 bg-white p-3 text-left">
-                    <p className="text-sm font-semibold text-black">{msg.answer.title}</p>
-                    <div className="mt-2 space-y-1">
-                      {msg.answer.details.map(item => (
-                        <div key={`${item.label}-${item.value}`} className="text-xs text-gray-700">
-                          <span className="font-semibold text-black">{item.label}:</span> {item.value}
+                    {isAmenityAnswer(msg.answer) ? (
+                      <AmenityResponseCard
+                        category={msg.answer.category}
+                        stations={msg.answer.stations}
+                        primaryRecommendation={msg.answer.primaryRecommendation}
+                        details={msg.answer.details}
+                        userQuery={msg.answer.userQuery}
+                      />
+                    ) : (
+                      <>
+                        <p className="text-sm font-semibold text-black">{msg.answer.title}</p>
+                        <div className="mt-2 space-y-1">
+                          {msg.answer.details.map(item => (
+                            <div key={`${item.label}-${item.value}`} className="text-xs text-gray-700">
+                              <span className="font-semibold text-black">{item.label}:</span> {item.value}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                    {msg.answer.quickFollowUps.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {msg.answer.quickFollowUps.slice(0, 2).map(q => (
-                          <button
-                            key={q}
-                            type="button"
-                            onClick={() => ask(q)}
-                            className="rounded-full border border-[#d7e4d8] bg-[#f8fbf9] px-2.5 py-1 text-[11px] text-gray-700 hover:bg-[#edf5ef]"
-                          >
-                            {q}
-                          </button>
-                        ))}
-                      </div>
+                        {msg.answer.quickFollowUps.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {msg.answer.quickFollowUps.slice(0, 2).map(q => (
+                              <button
+                                key={q}
+                                type="button"
+                                onClick={() => ask(q)}
+                                className="rounded-full border border-[#d7e4d8] bg-[#f8fbf9] px-2.5 py-1 text-[11px] text-gray-700 hover:bg-[#edf5ef]"
+                              >
+                                {q}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
