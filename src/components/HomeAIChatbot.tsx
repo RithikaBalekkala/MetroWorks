@@ -1,9 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Bot, MessageCircle, Send, X } from 'lucide-react';
+import { Bot, MessageCircle, Mic, Send, X } from 'lucide-react';
 import type { AmenityCategory } from '@/lib/metro-network';
 import AmenityResponseCard from '@/components/AmenityResponseCard';
+import VoiceAssistantModal from '@/components/VoiceAssistantModal';
+import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 
 interface ChatAnswer {
   answerType: 'ROUTE' | 'TRAIN_INFO' | 'GENERAL';
@@ -41,8 +43,10 @@ function isAmenityAnswer(value: ChatAnswer | AmenityAnswer): value is AmenityAns
 
 export default function HomeAIChatbot() {
   const [open, setOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const voiceAssistant = useVoiceAssistant();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -202,6 +206,15 @@ export default function HomeAIChatbot() {
               ))}
             </div>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setVoiceOpen(true)}
+                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-700 hover:bg-gray-50"
+                aria-label="Open AI voice assistant"
+                title="Open AI voice assistant"
+              >
+                <Mic className="h-4 w-4" />
+              </button>
               <input
                 value={input}
                 onChange={e => setInput(e.target.value)}
@@ -232,6 +245,11 @@ export default function HomeAIChatbot() {
           Metro Q&A
         </button>
       )}
+      <VoiceAssistantModal
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        assistant={voiceAssistant}
+      />
     </div>
   );
 }
